@@ -4,6 +4,7 @@ var Botkit        = require('botkit');
 var STAMPLAY      = require('stamplay');
 var STAMPLAYAPI   = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
 var HTTP          = require('request');
+var CONFIG        = require('./config.json');
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -36,7 +37,7 @@ bot.startRTM(function(err) {
 controller.hears(['pizzatime'], ['ambient'], function(bot, message) {
   console.log("====message====",message);
   var user = message.user;
-  var token = 'xoxp-43005705041-43096238547-43189021925-8d4beed37d';
+  var token = CONFIG.token;
   HTTP({
     url: 'https://slack.com/api/users.info',
     qs: {token: token, user: user},
