@@ -5,6 +5,9 @@ var STAMPLAY      = require('stamplay');
 var STAMPLAYAPI   = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
 var HTTP          = require('request');
 var CONFIG        = require('./config.json');
+var schedule      = require('node-schedule');
+var LocalStorage  = require('node-localstorage').LocalStorage;
+var localStorage      = new LocalStorage('./scratch');
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -21,23 +24,29 @@ var bot = controller.spawn({
 
 var message = {
   channel: 'D1936NDCK',
-  user: 'U192U70G3'
+  user: 'U1ASBAE9H'
 };
 
 bot.startRTM(function(err) {
   if (err) {
     throw new Error(err);
-  }/* else {
-    controller.startConversation(bot, message, function(err, convo) {
-      convo.say("Awesome.");
-    });
-  }*/
+  } else {
+    // var j = schedule.scheduleJob('59 1 * * * *', function(){
+    //   bot.startPrivateConversation(message, function(err, convo) {
+    //     convo.say("Awesome.");
+    //   });
+    // });
+    // bot.startPrivateConversation(message, function(err, convo) {
+    //   convo.say("Awesome.");
+    // });
+  }
 });
 
-controller.hears(['pizzatime'], ['ambient'], function(bot, message) {
+controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
   console.log("====message====",message);
   var user = message.user;
   var token = CONFIG.token;
+
   HTTP({
     url: 'https://slack.com/api/users.info',
     qs: {token: token, user: user},
@@ -68,48 +77,259 @@ controller.hears(['pizzatime'], ['ambient'], function(bot, message) {
             }
             console.log("=====user create====",userResult);
             var userResult = JSON.parse(userResult);
-            bot.startPrivateConversation(message, askStory);
+            console.log(message);
+            if(message.text === 'story idea'){
+              bot.startPrivateConversation(message, askStory);
+            }
+            if(message.text === 'edit story idea'){
+              bot.startPrivateConversation(message, askStoryForEdit);
+            }
           })
         } else {
-          bot.startPrivateConversation(message, askStory);
+          if(message.text === 'story idea'){
+              bot.startPrivateConversation(message, askStory);
+          }
+          if(message.text === 'edit story idea'){
+            bot.startPrivateConversation(message, askStoryForEdit);
+          }
         }
       })
     }
   });
 });
 
-function askStory(response, convo) {
-  console.log("==========askStory==============");
-  convo.ask("How many stories will you do this week?", function(response, convo) {
-    convo.say("Awesome.");
-    var num = parseInt(response.text);
-    console.log("========num====",num);
-    var i = 0;
-    (function init() {
-      console.log("========i====",i);
-      var n = i + 1;
-      console.log("========n====",n);
-      if(i === num){
-        return true;
-      } else {
-        convo.next();
-        askStoryName(response, convo, n, function(cb) {
-          console.log("======cb========");
-          i++;
-          init();
-        });
+
+function askStoryForEdit(response, convo) {
+  console.log("==========askStory==============",response,"---conve-----",convo.source_message.user);
+    STAMPLAYAPI.Query('object', 'draft_story').equalTo('username', convo.source_message.user).exec(function(error, result) {
+        if(error) {
+            console.log("====cb=error====",error);
+        }
+          var memoryResult = JSON.parse(result);
+          var storyPresent = false;
+          var test = '';
+          if(memoryResult.data.length > 0) {
+            for(var j = 0; j<memoryResult.data.length; j++){
+              var listString = memoryResult.data[j].storyTitle;
+              test = test + "\n" + listString;
+            }
+            convo.say("Which idea you want to Edit? Stories you have created" + test);
+            convo.ask("Please Enter story name which you want to edit", function(response, convo) {
+              console.log(response.text);
+
+              for(var i = 0; i < memoryResult.data.length; i++){
+                if(response.text === memoryResult.data[i].storyTitle){
+                  storyPresent = true;
+                  var idOfStory = memoryResult.data[i]._id;
+                }
+              }
+              if(storyPresent == true){
+                console.log("====------------------");
+                convo.next();
+                askStoryNameForEdit(response, convo,idOfStory, function(cb) {
+                  //cb();
+                });
+              }else{
+                convo.next();
+                convo.say("You have not created any story with name of " + response.text);
+                convo.say("Do you want to create story with name "+ response.text);
+                convo.ask("yes or no" , function(response, convo) {
+                  if(response.text === 'yes'){
+                    convo.next();
+                    askStory(response, convo, function(cb) {
+                      //cb();
+                    });
+                  }else{
+                    convo.next();
+                    convo.say("OK, you can create Story by typing Story Edit in Channel");
+                  }
+                });
+              }          
+            });
+            // for(var i =0; i< memoryResult.data.length;i++){
+            //   var listString = JSON.stringify(memoryResult.data[i].storyTitle)
+            //   console.log(listString);
+            //   convo.next();
+            // convo.say(listString);
+            // }
+
+          }else {
+            convo.next();
+            convo.say("You have not created any story Yet");
+          }
+   })  
+}
+
+
+function askStoryNameForEdit(response, convo,idOfStory, cb) {
+  convo.ask("What is the new name of your story?", function(response, convo) {
+    console.log(response.text);
+    console.log(response.user);
+    var userData = JSON.parse(localStorage.getItem(response.user));
+    console.log(userData.length);
+    var storyExist = false;
+    for(var i = 0 ; i < userData.length ; i++){
+      if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
+        storyExist = true;
       }
-    })();
+    }
+    if(storyExist == true){
+      console.log("+++++++++++++++++++++++++++++++");
+      convo.say("You have Already existing Story with this name, Please enter Diffrent name")
+      convo.next();
+      askStoryNameForEdit(response, convo,idOfStory, function(descCb) {
+        cb();
+      });
+    }else{
+      convo.say("Ok.")
+      convo.next();
+      askStoryDescriptionForEdit(response, convo,idOfStory, function(descCb) {
+        cb();
+      });
+    }
+  });
+}
+
+function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
+  console.log("----------------askStoryDescriptionForEdit----------------");
+  convo.ask("Give me a short description that will help others understand.", function(response, convo) {
+    convo.next();
+    askStoryETAForEdit(response, convo,idOfStory, function(etaCb) {
+      descCb();
+    });
+  });
+}
+
+function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
+  console.log("----------------askStoryETAForEdit----------------");
+  convo.ask("What's the ETA?", function(response, convo) {
+    convo.next();
+    askStoryOtherInfoForEdit(response, convo,idOfStory, function(infoCb) {
+      etaCb();
+    });
+  });
+}
+
+function askStoryOtherInfoForEdit(response, convo,idOfStory,infoCb) {
+  convo.ask("Anything else you want to mention?", function(response, convo) {
+    convo.next();
+    showResultsForEdit(response, convo,idOfStory, function(resultCb) {
+      infoCb();
+    });
+  });
+}
+
+function showResultsForEdit(response, convo,idOfStory, resultCb){
+  console.log("===============",convo.source_message.user);
+  var userId = convo.source_message.user;
+  var values = convo.extractResponses();
+  convo.say("Story Editing Complete");
+
+  console.log("======values=========",values);
+
+   var data = {
+    username: userId,
+    storyTitle: values['What is the new name of your story?'],
+    description: values['Give me a short description that will help others understand.'],
+    eta: values['What\'s the ETA?'],
+    otherInfo: values['Anything else you want to mention?']
+  }
+  console.log(data);
+
+  STAMPLAYAPI.Object('draft_story').update(idOfStory,data, function(error, result) {
+      if(error) {
+          console.log("====updateMemoryCb=error====",error);
+
+      }
+     console.log("=====memory data==update==",result);
+
+   })
+
+  // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
+  //   console.log("====+++++++=======+++++++=======",data);
+  //   if(error) {
+  //     console.log("====channelCb=error====",error);
+  //     channelCb(error);
+  //   }
+  //   console.log("=====data==create==",result);
+
+  //   if(localStorage.getItem(userId) === null){
+  //     var storyArray = [];
+  //     storyArray.push(data);
+  //     localStorage.setItem(userId,JSON.stringify(storyArray));
+  //   }else{
+  //     var storyArray = JSON.parse(localStorage.getItem(userId));
+  //     storyArray.push(data);
+  //     localStorage.setItem(userId,JSON.stringify(storyArray));
+  //   }
+
+  //   var channelResult = JSON.parse(result);
+  // })
+  convo.next();
+  resultCb();
+}
+
+
+
+//------------------------------- create story------------------
+
+function askStory(response, convo, rcb) {
+
+  console.log("==========askStory==============",response);
+  convo.ask("How many stories will you do this week?", function(response, convo) {
+    var num = parseInt(response.text);
+    console.log(isNaN(num));
+    if (isNaN(num)){
+      convo.say("Please enter Numerical value only.");
+      convo.next();
+      askStory(response, convo, function(cb) {
+        rcb();
+      });
+    }else{
+      convo.say("Awesome.");
+      console.log("========num====",num);
+      var i = 0;
+      (function init() {
+        console.log("========i====",i);
+        var n = i + 1;
+        console.log("========n====",n);
+        if(i === num){
+          return true;
+        } else {
+          convo.next();
+          askStoryName(response, convo, n, function(cb) {
+            console.log("======cb========");
+            i++;
+            init();
+          });
+        }
+      })();
+    }
   });
 }
 
 function askStoryName(response, convo, n, cb) {
   convo.ask("What is the name of your "+n+"th story?", function(response, convo) {
-    convo.say("Ok.")
-    convo.next();
-    askStoryDescription(response, convo, n, function(descCb) {
-      cb();
-    });
+    console.log(response.text);
+    console.log(response.user);
+    var userData = JSON.parse(localStorage.getItem(response.user));
+    console.log(userData.length);
+    for(var i = 0 ; i < userData.length ; i++){
+      if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
+        console.log("+++++++++++++++++++++++++++++++");
+        convo.say("You have Already existing Story with this name, Please enter Diffrent name")
+        convo.next();
+        askStoryName(response, convo, n, function(descCb) {
+          cb();
+        });
+      }else{
+        convo.say("Ok.")
+        convo.next();
+        askStoryDescription(response, convo, n, function(descCb) {
+          cb();
+        });
+      }
+    }
   });
 }
 
@@ -144,7 +364,6 @@ function showResults(response, convo, n, resultCb){
   console.log("===============",convo.source_message.user);
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
-
   convo.say("iteration finish");
 
   console.log("======values=========",values);
@@ -157,11 +376,23 @@ function showResults(response, convo, n, resultCb){
     otherInfo: values['Anything else you want to mention?']
   }
   STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
+    console.log("====+++++++=======+++++++=======",data);
     if(error) {
       console.log("====channelCb=error====",error);
       channelCb(error);
     }
     console.log("=====data==create==",result);
+
+    if(localStorage.getItem(userId) === null){
+      var storyArray = [];
+      storyArray.push(data);
+      localStorage.setItem(userId,JSON.stringify(storyArray));
+    }else{
+      var storyArray = JSON.parse(localStorage.getItem(userId));
+      storyArray.push(data);
+      localStorage.setItem(userId,JSON.stringify(storyArray));
+    }
+
     var channelResult = JSON.parse(result);
   })
   convo.next();

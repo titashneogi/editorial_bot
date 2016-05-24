@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "botkit": "^0.1.1",
+    "node-localstorage": "^1.3.0",
+    "node-schedule": "^1.1.0",
     "stamplay": "^1.0.6"
   }
 }
