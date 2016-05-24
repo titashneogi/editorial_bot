@@ -98,7 +98,6 @@ controller.hears(['story idea','edit story idea'],['ambient'], function(bot, mes
   });
 });
 
-
 function askStoryForEdit(response, convo) {
   console.log("==========askStory==============",response,"---conve-----",convo.source_message.user);
     STAMPLAYAPI.Query('object', 'draft_story').equalTo('username', convo.source_message.user).exec(function(error, result) {
@@ -152,14 +151,12 @@ function askStoryForEdit(response, convo) {
             //   convo.next();
             // convo.say(listString);
             // }
-
           }else {
             convo.next();
             convo.say("You have not created any story Yet");
           }
-   })  
+    })
 }
-
 
 function askStoryNameForEdit(response, convo,idOfStory, cb) {
   convo.ask("What is the new name of your story?", function(response, convo) {
@@ -224,9 +221,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
   convo.say("Story Editing Complete");
-
   console.log("======values=========",values);
-
    var data = {
     username: userId,
     storyTitle: values['What is the new name of your story?'],
@@ -239,32 +234,9 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
   STAMPLAYAPI.Object('draft_story').update(idOfStory,data, function(error, result) {
       if(error) {
           console.log("====updateMemoryCb=error====",error);
-
       }
-     console.log("=====memory data==update==",result);
-
-   })
-
-  // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
-  //   console.log("====+++++++=======+++++++=======",data);
-  //   if(error) {
-  //     console.log("====channelCb=error====",error);
-  //     channelCb(error);
-  //   }
-  //   console.log("=====data==create==",result);
-
-  //   if(localStorage.getItem(userId) === null){
-  //     var storyArray = [];
-  //     storyArray.push(data);
-  //     localStorage.setItem(userId,JSON.stringify(storyArray));
-  //   }else{
-  //     var storyArray = JSON.parse(localStorage.getItem(userId));
-  //     storyArray.push(data);
-  //     localStorage.setItem(userId,JSON.stringify(storyArray));
-  //   }
-
-  //   var channelResult = JSON.parse(result);
-  // })
+      console.log("=====memory data==update==",result);
+  })
   convo.next();
   resultCb();
 }
@@ -274,7 +246,6 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 //------------------------------- create story------------------
 
 function askStory(response, convo, rcb) {
-
   console.log("==========askStory==============",response);
   convo.ask("How many stories will you do this week?", function(response, convo) {
     var num = parseInt(response.text);
@@ -365,9 +336,7 @@ function showResults(response, convo, n, resultCb){
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
   convo.say("iteration finish");
-
   console.log("======values=========",values);
-
   var data = {
     username: userId,
     storyTitle: values['What is the name of your '+n+'th story?'],
