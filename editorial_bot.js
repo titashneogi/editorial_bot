@@ -31,7 +31,7 @@ bot.startRTM(function(err) {
   if (err) {
     throw new Error(err);
   } else {
-    // var j = schedule.scheduleJob('59 1 * * * *', function(){
+    // var j = schedule.scheduleJob('59 1 * * * *', function(){           // for scheduled DM messages commented for now
     //   bot.startPrivateConversation(message, function(err, convo) {
     //     convo.say("Awesome.");
     //   });
@@ -284,23 +284,34 @@ function askStoryName(response, convo, n, cb) {
     console.log(response.text);
     console.log(response.user);
     var userData = JSON.parse(localStorage.getItem(response.user));
-    console.log(userData.length);
-    for(var i = 0 ; i < userData.length ; i++){
-      if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
-        console.log("+++++++++++++++++++++++++++++++");
-        convo.say("You have Already existing Story with this name, Please enter Diffrent name")
-        convo.next();
-        askStoryName(response, convo, n, function(descCb) {
-          cb();
-        });
-      }else{
-        convo.say("Ok.")
-        convo.next();
-        askStoryDescription(response, convo, n, function(descCb) {
-          cb();
-        });
+
+    if(userData == null){
+      convo.say("Ok.")
+      convo.next();
+      askStoryDescription(response, convo, n, function(descCb) {
+        cb();
+      });
+    }else{
+      for(var i = 0 ; i < userData.length ; i++){
+        if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
+          console.log("+++++++++++++++++++++++++++++++");
+          convo.say("You have Already existing Story with this name, Please enter Diffrent name")
+          convo.next();
+          askStoryName(response, convo, n, function(descCb) {
+            cb();
+          });
+        }else{
+          convo.say("Ok.")
+          convo.next();
+          askStoryDescription(response, convo, n, function(descCb) {
+            cb();
+          });
+        }
       }
     }
+
+
+    
   });
 }
 
