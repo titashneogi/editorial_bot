@@ -200,10 +200,21 @@ function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
 function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
   console.log("----------------askStoryETAForEdit----------------");
   convo.ask("What's the ETA?", function(response, convo) {
-    convo.next();
-    askStoryOtherInfoForEdit(response, convo,idOfStory, function(infoCb) {
-      etaCb();
-    });
+    var date = new Date(response.text);
+    var day = parseInt(date.getFullYear());
+    var month = parseInt(date.getMonth() + 1);
+    var year = parseInt(date.getDate());
+    if (isNaN(day && month && year)){
+      convo.next();
+      askStoryETAForEdit(response, convo, n, function(infoCb) {
+        etaCb();
+      });
+    }else{
+      convo.next();
+      askStoryOtherInfoForEdit(response, convo, n, function(infoCb) {
+        etaCb();
+      });
+    }
   });
 }
 
@@ -238,6 +249,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
       console.log("=====memory data==update==",result);
   })
   convo.next();
+  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
 
@@ -249,7 +261,6 @@ function askStory(response, convo, rcb) {
   console.log("==========askStory==============",response);
   convo.ask("How many stories will you do this week?", function(response, convo) {
     var num = parseInt(response.text);
-    console.log(isNaN(num));
     if (isNaN(num)){
       convo.say("Please enter Numerical value only.");
       convo.next();
@@ -292,26 +303,28 @@ function askStoryName(response, convo, n, cb) {
         cb();
       });
     }else{
+      var status = false;
       for(var i = 0 ; i < userData.length ; i++){
         if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
-          console.log("+++++++++++++++++++++++++++++++");
-          convo.say("You have Already existing Story with this name, Please enter Diffrent name")
+          status = true;
+        }
+      }
+      if (status === true){
+        console.log("+++++++++++++++++++++++++++++++");
+        convo.say("You have Already existing Story with this name, Please enter Diffrent name")
           convo.next();
           askStoryName(response, convo, n, function(descCb) {
             cb();
-          });
-        }else{
-          convo.say("Ok.")
-          convo.next();
-          askStoryDescription(response, convo, n, function(descCb) {
-            cb();
-          });
-        }
+        });
+      }
+      if (status === false){
+        convo.say("Ok.")
+        convo.next();
+        askStoryDescription(response, convo, n, function(descCb) {
+          cb();
+        });
       }
     }
-
-
-    
   });
 }
 
@@ -325,11 +338,22 @@ function askStoryDescription(response, convo, n, descCb) {
 }
 
 function askStoryETA(response, convo, n, etaCb) {
-  convo.ask("What's the ETA?", function(response, convo) {
-    convo.next();
-    askStoryOtherInfo(response, convo, n, function(infoCb) {
-      etaCb();
-    });
+  convo.ask("What's the ETA? Please reply in dd/mm/yyyy format only", function(response, convo) {
+    var date = new Date(response.text);
+    var day = parseInt(date.getFullYear());
+    var month = parseInt(date.getMonth() + 1);
+    var year = parseInt(date.getDate());
+    if (isNaN(day && month && year)){
+      convo.next();
+      askStoryETA(response, convo, n, function(infoCb) {
+        etaCb();
+      });
+    }else{
+      convo.next();
+      askStoryOtherInfo(response, convo, n, function(infoCb) {
+        etaCb();
+      });
+    }
   });
 }
 
@@ -376,5 +400,6 @@ function showResults(response, convo, n, resultCb){
     var channelResult = JSON.parse(result);
   })
   convo.next();
+  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
