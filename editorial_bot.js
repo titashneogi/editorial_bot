@@ -26,11 +26,12 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
 });
 
 function authorize(credentials) {
+  console.log(credentials.web.client_id);
   var a = credentials;
   console.log('==========a==========',a);
-  var clientSecret ='bC_7GToroLB_Rn40pBMABu7V';
-  var clientId = '261947230361-ii78cfko4v6pm7nhgqcollebe8br5jpr.apps.googleusercontent.com';
-  var redirectUrl = 'https://botground.slack.com';
+  var clientSecret =credentials.web.clientSecret_;
+  var clientId = credentials.web.client_id;
+  var redirectUrl = credentials.web.javascript_origins[0];
   var auth = new googleAuth();
   var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
   console.log("==========oauth2Client============",oauth2Client);
