@@ -7,7 +7,125 @@ var HTTP          = require('request');
 var CONFIG        = require('./config.json');
 var schedule      = require('node-schedule');
 var LocalStorage  = require('node-localstorage').LocalStorage;
-var localStorage      = new LocalStorage('./scratch');
+var localStorage  = new LocalStorage('./scratch');
+var fs            = require('fs');
+var readline      = require('readline');
+var google        = require('googleapis');
+var googleAuth    = require('google-auth-library');
+var authDetail = '';
+var SCOPES = ['https://www.googleapis.com/auth/calendar'];
+var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
+    process.env.USERPROFILE) + '/.credentials/';
+var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+console.log(TOKEN_PATH);
+
+fs.readFile('client_secret.json', function processClientSecrets(err, content) {
+  if (err) {
+    console.log('Error loading client secret file: ' + err);
+    return;
+  }
+  console.log("================content",content);
+
+  authorize(JSON.parse(content));
+});
+
+function authorize(credentials) {
+  var a = credentials;
+  console.log('==========a==========',a);
+  var clientSecret ='bC_7GToroLB_Rn40pBMABu7V';
+  var clientId = '261947230361-ii78cfko4v6pm7nhgqcollebe8br5jpr.apps.googleusercontent.com';
+  var redirectUrl = 'https://botground.slack.com';
+  var auth = new googleAuth();
+  var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+  console.log("==========oauth2Client============",oauth2Client);
+  fs.readFile(TOKEN_PATH, function(err, token) {
+    if (err) {
+      console.log(token);
+      getNewToken(oauth2Client);
+    } else {
+      //getNewToken(oauth2Client);
+      oauth2Client.credentials = JSON.parse(token);
+      authDetail = oauth2Client;
+      console.log("asdsadsadsadasdsad================",authDetail);
+      //callback(oauth2Client);
+      //listEvents(oauth2Client);
+    }
+  });
+}
+
+function getNewToken(oauth2Client, callback) {
+  var authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'online',
+    scope: SCOPES
+  });
+  console.log('Authorize this app by visiting this url: ', authUrl);
+  var rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+  rl.question('Enter the code from that page here: ', function(code) {
+    console.log("================code",code);
+    rl.close();
+    oauth2Client.getToken(code, function(err, token) {
+      if (err) {
+        oauth2Client.credentials = token;
+        console.log('Error while trying to retrieve access token', err);
+        return;
+      }
+      oauth2Client.credentials = token;
+      console.log("====================token",token);
+      storeToken(token);
+      var authDetail = oauth2Client;
+      console.log("asdsadsadsadasdsad================",authdetail);
+      //callback(oauth2Client);
+      //listEvents(oauth2Client);
+    });
+  });
+}
+
+function storeToken(token) {
+  try {
+    fs.mkdirSync(TOKEN_DIR);
+  } catch (err) {
+    if (err.code != 'EEXIST') {
+      throw err;
+    }
+  }
+  fs.writeFile(TOKEN_PATH, JSON.stringify(token));
+  console.log('Token stored to ' + TOKEN_PATH);
+}
+
+function listEvents(auth) {
+
+  var event = {
+    'summary': 'Google I/O 2015',
+    'start': {
+      'date': '03-06-2016'
+    },
+    'end': {
+      'date': '04-06-2016'
+    },
+  };
+  var calendar = google.calendar('v3');
+  calendar.events.insert({
+    auth: auth,
+    calendarId: 'himanshu.sharma@viithiisys.com',
+    resource: event,
+  }, function(err, event) {
+    if (err) {
+      console.log('There was an error contacting the Calendar service: ' + err);
+      return;
+    }
+    console.log('Event created: %s', event.htmlLink);
+  });
+}
+
+
+
+
+
+
+
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -199,7 +317,7 @@ function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
 
 function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
   console.log("----------------askStoryETAForEdit----------------");
-  convo.ask("What's the ETA?", function(response, convo) {
+  convo.ask("What's the ETA?Please reply in yyyy-mm-dd format only", function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
     var month = parseInt(date.getMonth() + 1);
@@ -237,7 +355,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
     username: userId,
     storyTitle: values['What is the new name of your story?'],
     description: values['Give me a short description that will help others understand.'],
-    eta: values['What\'s the ETA?'],
+    eta: values['What\'s the ETA?Please reply in yyyy-mm-dd format only'],
     otherInfo: values['Anything else you want to mention?']
   }
   console.log(data);
@@ -248,6 +366,27 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
       }
       console.log("=====memory data==update==",result);
   })
+  var event = {
+    'summary': data.storyTitle,
+    'start': {
+      'date': data.eta
+    },
+    'end': {
+      'date': data.eta
+    },
+  };
+  var calendar = google.calendar('v3');
+  calendar.events.insert({
+    auth: authDetail,
+    calendarId: 'himanshu.sharma@viithiisys.com',
+    resource: event,
+  }, function(err, event) {
+    if (err) {
+      console.log('There was an error contacting the Calendar service: ' + err);
+      return;
+    }
+    console.log('Event created: %s', event.htmlLink);
+  });
   convo.next();
   convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
@@ -338,7 +477,7 @@ function askStoryDescription(response, convo, n, descCb) {
 }
 
 function askStoryETA(response, convo, n, etaCb) {
-  convo.ask("What's the ETA? Please reply in dd/mm/yyyy format only", function(response, convo) {
+  convo.ask("What's the ETA? Please reply in yyyy-mm-dd format only", function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
     var month = parseInt(date.getMonth() + 1);
@@ -367,6 +506,7 @@ function askStoryOtherInfo(response, convo, n, infoCb) {
 }
 
 function showResults(response, convo, n, resultCb){
+  console.log("asdsadsadsadasdsad================",authDetail);
   console.log("===============",convo.source_message.user);
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
@@ -376,7 +516,7 @@ function showResults(response, convo, n, resultCb){
     username: userId,
     storyTitle: values['What is the name of your '+n+'th story?'],
     description: values['Give me a short description that will help others understand.'],
-    eta: values['What\'s the ETA?'],
+    eta: values['What\'s the ETA? Please reply in yyyy-mm-dd format only'],
     otherInfo: values['Anything else you want to mention?']
   }
   STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
@@ -396,9 +536,30 @@ function showResults(response, convo, n, resultCb){
       storyArray.push(data);
       localStorage.setItem(userId,JSON.stringify(storyArray));
     }
-
     var channelResult = JSON.parse(result);
   })
+  var event = {
+    'summary': data.storyTitle,
+    'start': {
+      'date': data.eta
+    },
+    'end': {
+      'date': data.eta
+    },
+  };
+  var calendar = google.calendar('v3');
+  calendar.events.insert({
+    auth: authDetail,
+    calendarId: 'himanshu.sharma@viithiisys.com',
+    resource: event,
+  }, function(err, event) {
+    if (err) {
+      console.log('There was an error contacting the Calendar service: ' + err);
+      return;
+    }
+    console.log('Event created: %s', event.htmlLink);
+  });
+
   convo.next();
   convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
