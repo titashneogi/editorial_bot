@@ -3,3 +3,6 @@
 
 config.json
 scratch
+node_modules
+client_secret.json
+editorial-2a3fccedddae.json

@@ -12,20 +12,16 @@ var fs            = require('fs');
 var readline      = require('readline');
 var google        = require('googleapis');
 var googleAuth    = require('google-auth-library');
-var authDetail = '';
-var SCOPES = ['https://www.googleapis.com/auth/calendar'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-    process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
-console.log(TOKEN_PATH);
+var authDetail    = '';
+var SCOPES        = ['https://www.googleapis.com/auth/calendar'];
+var TOKEN_DIR     = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
+var TOKEN_PATH    = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
 fs.readFile('client_secret.json', function processClientSecrets(err, content) {
   if (err) {
     console.log('Error loading client secret file: ' + err);
     return;
   }
-  console.log("================content",content);
-
   authorize(JSON.parse(content));
 });
 
@@ -76,7 +72,6 @@ function getNewToken(oauth2Client, callback) {
       console.log("====================token",token);
       storeToken(token);
       var authDetail = oauth2Client;
-      console.log("asdsadsadsadasdsad================",authdetail);
       //callback(oauth2Client);
       //listEvents(oauth2Client);
     });
@@ -95,37 +90,29 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-function listEvents(auth) {
-
-  var event = {
-    'summary': 'Google I/O 2015',
-    'start': {
-      'date': '03-06-2016'
-    },
-    'end': {
-      'date': '04-06-2016'
-    },
-  };
-  var calendar = google.calendar('v3');
-  calendar.events.insert({
-    auth: auth,
-    calendarId: 'himanshu.sharma@viithiisys.com',
-    resource: event,
-  }, function(err, event) {
-    if (err) {
-      console.log('There was an error contacting the Calendar service: ' + err);
-      return;
-    }
-    console.log('Event created: %s', event.htmlLink);
-  });
-}
-
-
-
-
-
-
-
+// function listEvents(auth) {
+//   var event = {
+//     'summary': 'Google I/O 2015',
+//     'start': {
+//       'date': '03-06-2016'
+//     },
+//     'end': {
+//       'date': '04-06-2016'
+//     },
+//   };
+//   var calendar = google.calendar('v3');
+//   calendar.events.insert({
+//     auth: auth,
+//     calendarId: 'himanshu.sharma@viithiisys.com',
+//     resource: event,
+//   }, function(err, event) {
+//     if (err) {
+//       console.log('There was an error contacting the Calendar service: ' + err);
+//       return;
+//     }
+//     console.log('Event created: %s', event.htmlLink);
+//   });
+// }
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -391,8 +378,6 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
   convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
-
-
 
 //------------------------------- create story------------------
 
