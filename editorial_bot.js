@@ -1,119 +1,183 @@
 'use strict'
 
-var Botkit        = require('botkit');
-var STAMPLAY      = require('stamplay');
-var STAMPLAYAPI   = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
-var HTTP          = require('request');
-var CONFIG        = require('./config.json');
-var schedule      = require('node-schedule');
-var LocalStorage  = require('node-localstorage').LocalStorage;
-var localStorage  = new LocalStorage('./scratch');
-var fs            = require('fs');
-var readline      = require('readline');
-var google        = require('googleapis');
-var googleAuth    = require('google-auth-library');
-var authDetail    = '';
-var SCOPES        = ['https://www.googleapis.com/auth/calendar'];
-var TOKEN_DIR     = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH    = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+var fs                = require('fs');
 
-fs.readFile('client_secret.json', function processClientSecrets(err, content) {
-  if (err) {
-    console.log('Error loading client secret file: ' + err);
-    return;
-  }
-  authorize(JSON.parse(content));
-});
+var Train             = require('./src/train');
+var Brain             = require('./src/brain');
+var Ears              = require('./src/ears');
+var builtinPhrases    = require('./builtins');
+var Botkit            = require('botkit');
+var botkit            = require('botkit');
+var STAMPLAY          = require('stamplay');
+var STAMPLAYAPI       = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
+var HTTP              = require('request');
+var CONFIG            = require('./config.json');
+var schedule          = require('node-schedule');
+var LocalStorage      = require('node-localstorage').LocalStorage;
+var localStorage      = new LocalStorage('./scratch');
+var readline          = require('readline');
+var google            = require('googleapis');
+var googleAuth        = require('google-auth-library');
+var authDetail        = '';
+var SCOPES            = ['https://www.googleapis.com/auth/calendar'];
+var TOKEN_DIR         = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
+var TOKEN_PATH        = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
-function authorize(credentials) {
-  console.log(credentials.web.client_id);
-  var a = credentials;
-  console.log('==========a==========',a);
-  var clientSecret =credentials.web.clientSecret_;
-  var clientId = credentials.web.client_id;
-  var redirectUrl = credentials.web.javascript_origins[0];
-  var auth = new googleAuth();
-  var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-  console.log("==========oauth2Client============",oauth2Client);
-  fs.readFile(TOKEN_PATH, function(err, token) {
-    if (err) {
-      console.log(token);
-      getNewToken(oauth2Client);
-    } else {
-      //getNewToken(oauth2Client);
-      oauth2Client.credentials = JSON.parse(token);
-      authDetail = oauth2Client;
-      console.log("asdsadsadsadasdsad================",authDetail);
-      //callback(oauth2Client);
-      //listEvents(oauth2Client);
-    }
+var Bottie = {
+  Brain: new Brain(),
+  Ears: new Ears('xoxb-42990029572-hwPlQmddLKpHiV0SYsO2Y5CT')
+};
+
+var customPhrasesText;
+var customPhrases;
+try {
+  customPhrasesText = fs.readFileSync(__dirname + '/custom-phrases.json').toString();
+} catch (err) {
+  throw new Error('Uh oh, Bottie could not find the ' +
+    'custom-phrases.json file, did you move it?');
+}
+try {
+  customPhrases = JSON.parse(customPhrasesText);
+} catch (err) {
+  throw new Error('Uh oh, custom-phrases.json was ' +
+    'not valid JSON! Fix it, please? :)');
+}
+
+console.log('Bottie is learning...');
+Bottie.Teach = Bottie.Brain.teach.bind(Bottie.Brain);
+console.log("+++++++customPhrases++++++++",customPhrases);
+console.log("+++++++builtinPhrases++++++++",builtinPhrases);
+eachKey(customPhrases, Bottie.Teach);
+eachKey(builtinPhrases, Bottie.Teach);
+Bottie.Brain.think();
+console.log('Bottie finished learning, time to listen...');
+// Bottie.Ears
+//   .listen()
+//   .hear(['story idea','edit story idea'], function(speech, message) {
+//     console.log("++++++++++speech++++++++++++++",speech);
+//     console.log("++++++++++message++++++++++++++",message);
+//     console.log('Delegating to on-the-fly training module...');
+//     Train(Bottie.Brain, speech, message);
+//   })
+  // .hear('.*', function(speech, message) {
+  //   var interpretation = Bottie.Brain.interpret(message.text);
+  //   console.log('Bottie heard: ' + message.text);
+  //   console.log('Bottie interpretation: ', interpretation);
+  //   if (interpretation.guess) {
+  //     console.log('Invoking skill: ' + interpretation.guess);
+  //     Bottie.Brain.invoke(interpretation.guess, interpretation, speech, message);
+  //   } else {
+  //     speech.reply(message, 'Hmm... I couldn\'t tell what you said...');
+  //     speech.reply(message, '```\n' + JSON.stringify(interpretation) + '\n```');
+  //   }
+  // });
+
+
+
+function eachKey(object, callback) {
+  Object.keys(object).forEach(function(key) {
+    callback(key, object[key]);
   });
 }
 
-function getNewToken(oauth2Client, callback) {
-  var authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'online',
-    scope: SCOPES
-  });
-  console.log('Authorize this app by visiting this url: ', authUrl);
-  var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  rl.question('Enter the code from that page here: ', function(code) {
-    console.log("================code",code);
-    rl.close();
-    oauth2Client.getToken(code, function(err, token) {
-      if (err) {
-        oauth2Client.credentials = token;
-        console.log('Error while trying to retrieve access token', err);
-        return;
-      }
-      oauth2Client.credentials = token;
-      console.log("====================token",token);
-      storeToken(token);
-      var authDetail = oauth2Client;
-      //callback(oauth2Client);
-      //listEvents(oauth2Client);
-    });
-  });
-}
 
-function storeToken(token) {
-  try {
-    fs.mkdirSync(TOKEN_DIR);
-  } catch (err) {
-    if (err.code != 'EEXIST') {
-      throw err;
-    }
-  }
-  fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-  console.log('Token stored to ' + TOKEN_PATH);
-}
 
-// function listEvents(auth) {
-//   var event = {
-//     'summary': 'Google I/O 2015',
-//     'start': {
-//       'date': '03-06-2016'
-//     },
-//     'end': {
-//       'date': '04-06-2016'
-//     },
-//   };
-//   var calendar = google.calendar('v3');
-//   calendar.events.insert({
-//     auth: auth,
-//     calendarId: 'himanshu.sharma@viithiisys.com',
-//     resource: event,
-//   }, function(err, event) {
+
+// fs.readFile('client_secret.json', function processClientSecrets(err, content) {
+//   if (err) {
+//     console.log('Error loading client secret file: ' + err);
+//     return;
+//   }
+//   authorize(JSON.parse(content));
+// });
+
+// function authorize(credentials) {
+//   var a = credentials;
+//   console.log('==========a==========',a);
+//   var clientSecret =credentials.web.clientSecret_;
+//   var clientId = credentials.web.client_id;
+//   var redirectUrl = credentials.web.javascript_origins[0];
+//   var auth = new googleAuth();
+//   var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+//   console.log("==========oauth2Client============",oauth2Client);
+//   fs.readFile(TOKEN_PATH, function(err, token) {
 //     if (err) {
-//       console.log('There was an error contacting the Calendar service: ' + err);
-//       return;
+//       console.log(token);
+//       getNewToken(oauth2Client);
+//     } else {
+//       //getNewToken(oauth2Client);
+//       oauth2Client.credentials = JSON.parse(token);
+//       authDetail = oauth2Client;
+//       //callback(oauth2Client);
+//       //listEvents(oauth2Client);
 //     }
-//     console.log('Event created: %s', event.htmlLink);
 //   });
 // }
+
+// function getNewToken(oauth2Client, callback) {
+//   var authUrl = oauth2Client.generateAuthUrl({
+//     access_type: 'online',
+//     scope: SCOPES
+//   });
+//   console.log('Authorize this app by visiting this url: ', authUrl);
+//   var rl = readline.createInterface({
+//     input: process.stdin,
+//     output: process.stdout
+//   });
+//   rl.question('Enter the code from that page here: ', function(code) {
+//     console.log("================code",code);
+//     rl.close();
+//     oauth2Client.getToken(code, function(err, token) {
+//       if (err) {
+//         oauth2Client.credentials = token;
+//         console.log('Error while trying to retrieve access token', err);
+//         return;
+//       }
+//       oauth2Client.credentials = token;
+//       console.log("====================token",token);
+//       storeToken(token);
+//       var authDetail = oauth2Client;
+//       //callback(oauth2Client);
+//       //listEvents(oauth2Client);
+//     });
+//   });
+// }
+
+// function storeToken(token) {
+//   try {
+//     fs.mkdirSync(TOKEN_DIR);
+//   } catch (err) {
+//     if (err.code != 'EEXIST') {
+//       throw err;
+//     }
+//   }
+//   fs.writeFile(TOKEN_PATH, JSON.stringify(token));
+//   console.log('Token stored to ' + TOKEN_PATH);
+// }
+
+// // function listEvents(auth) {
+// //   var event = {
+// //     'summary': 'Google I/O 2015',
+// //     'start': {
+// //       'date': '03-06-2016'
+// //     },
+// //     'end': {
+// //       'date': '04-06-2016'
+// //     },
+// //   };
+// //   var calendar = google.calendar('v3');
+// //   calendar.events.insert({
+// //     auth: auth,
+// //     calendarId: 'himanshu.sharma@viithiisys.com',
+// //     resource: event,
+// //   }, function(err, event) {
+// //     if (err) {
+// //       console.log('There was an error contacting the Calendar service: ' + err);
+// //       return;
+// //     }
+// //     console.log('Event created: %s', event.htmlLink);
+// //   });
+// // }
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -492,6 +556,8 @@ function askStoryOtherInfo(response, convo, n, infoCb) {
 }
 
 function showResults(response, convo, n, resultCb){
+  var phraseExamples = [];
+  var phraseName;
   console.log("asdsadsadsadasdsad================",authDetail);
   console.log("===============",convo.source_message.user);
   var userId = convo.source_message.user;
@@ -524,6 +590,17 @@ function showResults(response, convo, n, resultCb){
     }
     var channelResult = JSON.parse(result);
   })
+
+  phraseName = data.storyTitle;
+  phraseExamples.push(data.description);
+  Bottie.Brain.teach(phraseName, phraseExamples);
+  Bottie.Brain.think();
+  Train(phraseName, phraseExamples, function(err) {
+      if (err) {
+        console.log("++++++++++++++++++++++++++errr+++++++++++++++++++++++++",err);
+      }
+      console.log("++++++++++++++++++++++++++all DOne+++++++++++++++++++++++++");
+    });
   var event = {
     'summary': data.storyTitle,
     'start': {
