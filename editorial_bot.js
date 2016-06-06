@@ -86,6 +86,7 @@ function authorize(credentials, callback) {
   var redirectUrl = 'https://botground.slack.com';
   var auth = new googleAuth();
   var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+  authDetail = oauth2Client;
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, function(err, token) {
@@ -93,7 +94,7 @@ function authorize(credentials, callback) {
     if (err) {
       getNewToken(oauth2Client, callback);
     } else {
-      getNewToken(oauth2Client, callback);
+      //getNewToken(oauth2Client, callback);
       oauth2Client.credentials = JSON.parse(token);
       console.log(oauth2Client.credentials);
       // callback(oauth2Client);
@@ -120,6 +121,7 @@ function getNewToken(oauth2Client, callback) {
         return;
       }
       oauth2Client.credentials = token;
+      console.log(oauth2Client);
       storeToken(token);
       //callback(oauth2Client);
     });
@@ -451,6 +453,7 @@ function askStory(response, convo, rcb) {
 }
 
 function askStoryName(response, convo, n, cb) {
+  console.log("+++++++++++askStoryName++++++++++");
   convo.ask("What is the name of your "+n+"th story?", function(response, convo) {
     console.log(response.text);
     console.log(response.user);
@@ -489,6 +492,7 @@ function askStoryName(response, convo, n, cb) {
 }
 
 function askStoryDescription(response, convo, n, descCb) {
+  console.log("+++++++++++askStoryDescription++++++++++");
   convo.ask("Give me a short description that will help others understand.", function(response, convo) {
     convo.next();
     askStoryETA(response, convo, n, function(etaCb) {
@@ -498,6 +502,7 @@ function askStoryDescription(response, convo, n, descCb) {
 }
 
 function askStoryETA(response, convo, n, etaCb) {
+  console.log("+++++++++++askStoryETA++++++++++");
   convo.ask("What's the ETA? Please reply in yyyy-mm-dd format only", function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
@@ -518,6 +523,7 @@ function askStoryETA(response, convo, n, etaCb) {
 }
 
 function askStoryOtherInfo(response, convo, n, infoCb) {
+  console.log("+++++++++++askStoryOtherInfo++++++++++");
   convo.ask("Anything else you want to mention?", function(response, convo) {
     convo.next();
     showResults(response, convo, n, function(resultCb) {
@@ -582,6 +588,7 @@ function showResults(response, convo, n, resultCb){
     },
   };
   var calendar = google.calendar('v3');
+  console.log(authDetail);
   calendar.events.insert({
     auth: authDetail,
     calendarId: 'bot.editorial@gmail.com',
