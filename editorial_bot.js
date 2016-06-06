@@ -22,9 +22,29 @@ var SCOPES            = ['https://www.googleapis.com/auth/calendar'];
 var TOKEN_DIR         = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH        = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
+//-- getting Token --
+
+if (!process.env.token) {
+  console.log('Error: Specify token in environment');
+  process.exit(1);
+}
+
+var controller = Botkit.slackbot({
+  debug: false
+});
+
+var bot = controller.spawn({
+  token: process.env.token
+})
+
+var message = {
+  channel: 'D1936NDCK',
+  user: 'U1ASBAE9H'
+};
+
 var Bottie = {
   Brain: new Brain(),
-  Ears: new Ears('xoxb-42990029572-hwPlQmddLKpHiV0SYsO2Y5CT')
+  Ears: new Ears(bot.config.token)
 };
 
 var customPhrasesText;
@@ -152,24 +172,6 @@ function storeToken(token) {
 //     console.log('Event created: %s', event.htmlLink);
 //   });
 // }
-
-if (!process.env.token) {
-  console.log('Error: Specify token in environment');
-  process.exit(1);
-}
-
-var controller = Botkit.slackbot({
-  debug: false
-});
-
-var bot = controller.spawn({
-  token: process.env.token
-})
-
-var message = {
-  channel: 'D1936NDCK',
-  user: 'U1ASBAE9H'
-};
 
 bot.startRTM(function(err) {
   if (err) {
