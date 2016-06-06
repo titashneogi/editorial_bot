@@ -17,7 +17,7 @@ var readline          = require('readline');
 var google            = require('googleapis');
 var googleAuth        = require('google-auth-library');
 var authDetail        = '';
-var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+var SCOPES = ['https://www.googleapis.com/auth/calendar'];
 var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
     process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
@@ -105,7 +105,7 @@ function authorize(credentials, callback) {
 
 function getNewToken(oauth2Client, callback) {
   var authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
+    access_type: 'online',
     scope: SCOPES
   });
   console.log('Authorize this app by visiting this url: ', authUrl);
@@ -141,29 +141,6 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-function listEvents(auth) {
-  var event = {
-    'summary': 'Google I/O 2015',
-    'start': {
-      'date': '03-06-2016'
-    },
-    'end': {
-      'date': '04-06-2016'
-    },
-  };
-  var calendar = google.calendar('v3');
-  calendar.events.insert({
-    auth: auth,
-    calendarId: 'himanshu.sharma@viithiisys.com',
-    resource: event,
-  }, function(err, event) {
-    if (err) {
-      console.log('There was an error contacting the Calendar service: ' + err);
-      return;
-    }
-    console.log('Event created: %s', event.htmlLink);
-  });
-}
 
 var message = {
   channel: 'D1936NDCK',
