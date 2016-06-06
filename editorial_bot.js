@@ -10,7 +10,7 @@ var botkit            = require('botkit');
 var STAMPLAY          = require('stamplay');
 var STAMPLAYAPI       = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
 var HTTP              = require('request');
-var CONFIG            = require('./config.json');
+//var CONFIG            = require('./config.json');
 var schedule          = require('node-schedule');
 var LocalStorage      = require('node-localstorage').LocalStorage;
 var localStorage      = new LocalStorage('./scratch');
@@ -162,7 +162,7 @@ var controller = Botkit.slackbot({
 var bot = controller.spawn({
   token: process.env.token
 })
-
+console.log(bot);
 var message = {
   channel: 'D1936NDCK',
   user: 'U1ASBAE9H'
@@ -186,7 +186,7 @@ bot.startRTM(function(err) {
 controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
   console.log("====message====",message);
   var user = message.user;
-  var token = CONFIG.token;
+  var token = bot.config.token;
 
   HTTP({
     url: 'https://slack.com/api/users.info',
