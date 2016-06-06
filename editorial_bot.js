@@ -22,7 +22,7 @@ var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
     process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
-
+console.log("++++++++++++TOKEN_PATH++++++++++++++++",TOKEN_PATH);
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
   process.exit(1);
