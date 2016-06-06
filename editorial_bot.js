@@ -38,7 +38,7 @@ var bot = controller.spawn({
 
 var Bottie = {
   Brain: new Brain(),
-  Ears: new Ears(bot.config.token;)
+  Ears: new Ears(bot.config.token)
 };
 
 var customPhrasesText;
