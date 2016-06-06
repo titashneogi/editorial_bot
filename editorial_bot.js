@@ -82,7 +82,8 @@ function authorize(credentials, callback) {
       getNewToken(oauth2Client, callback);
     } else {
       getNewToken(oauth2Client, callback);
-      // oauth2Client.credentials = JSON.parse(token);
+      oauth2Client.credentials = JSON.parse(token);
+      console.log(oauth2Client.credentials);
       // callback(oauth2Client);
     }
   });
@@ -162,7 +163,7 @@ var controller = Botkit.slackbot({
 var bot = controller.spawn({
   token: process.env.token
 })
-console.log(bot);
+
 var message = {
   channel: 'D1936NDCK',
   user: 'U1ASBAE9H'
