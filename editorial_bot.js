@@ -10,7 +10,6 @@ var botkit            = require('botkit');
 var STAMPLAY          = require('stamplay');
 var STAMPLAYAPI       = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
 var HTTP              = require('request');
-//var CONFIG            = require('./config.json');
 var schedule          = require('node-schedule');
 var LocalStorage      = require('node-localstorage').LocalStorage;
 var localStorage      = new LocalStorage('./scratch');
@@ -24,9 +23,22 @@ var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
 var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
 
+if (!process.env.token) {
+  console.log('Error: Specify token in environment');
+  process.exit(1);
+}
+
+var controller = Botkit.slackbot({
+  debug: false
+});
+
+var bot = controller.spawn({
+  token: process.env.token
+})
+
 var Bottie = {
   Brain: new Brain(),
-  Ears: new Ears('xoxb-42990029572-hwPlQmddLKpHiV0SYsO2Y5CT')
+  Ears: new Ears(bot.config.token;)
 };
 
 var customPhrasesText;
@@ -150,19 +162,6 @@ function listEvents(auth) {
     console.log('Event created: %s', event.htmlLink);
   });
 }
-
-if (!process.env.token) {
-  console.log('Error: Specify token in environment');
-  process.exit(1);
-}
-
-var controller = Botkit.slackbot({
-  debug: false
-});
-
-var bot = controller.spawn({
-  token: process.env.token
-})
 
 var message = {
   channel: 'D1936NDCK',
