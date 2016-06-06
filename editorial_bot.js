@@ -18,9 +18,11 @@ var readline          = require('readline');
 var google            = require('googleapis');
 var googleAuth        = require('google-auth-library');
 var authDetail        = '';
-var SCOPES            = ['https://www.googleapis.com/auth/calendar'];
-var TOKEN_DIR         = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH        = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+var SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
+var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
+    process.env.USERPROFILE) + '/.credentials/';
+var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+
 
 var Bottie = {
   Brain: new Brain(),
@@ -65,30 +67,31 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
   authorize(JSON.parse(content));
 });
 
-function authorize(credentials) {
-  var a = credentials;
-  var clientSecret =credentials.web.clientSecret_;
-  var clientId = credentials.web.client_id;
-  var redirectUrl = credentials.web.javascript_origins[0];
+
+function authorize(credentials, callback) {
+  var clientSecret = 'HRRD6NcSee8Ep-mESPKAK1hw';
+  var clientId = '779793103903-blcmut6f3hpn4epu92hsvmicml4ejoqj.apps.googleusercontent.com';
+  var redirectUrl = 'https://botground.slack.com';
   var auth = new googleAuth();
   var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+
+  // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, function(err, token) {
+    console.log(token);
     if (err) {
-      console.log(token);
-      getNewToken(oauth2Client);
+      getNewToken(oauth2Client, callback);
     } else {
-      //getNewToken(oauth2Client);
-      oauth2Client.credentials = JSON.parse(token);
-      authDetail = oauth2Client;
-      //callback(oauth2Client);
-      //listEvents(oauth2Client);
+      getNewToken(oauth2Client, callback);
+      // oauth2Client.credentials = JSON.parse(token);
+      // callback(oauth2Client);
     }
   });
 }
 
+
 function getNewToken(oauth2Client, callback) {
   var authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'online',
+    access_type: 'offline',
     scope: SCOPES
   });
   console.log('Authorize this app by visiting this url: ', authUrl);
@@ -97,25 +100,21 @@ function getNewToken(oauth2Client, callback) {
     output: process.stdout
   });
   rl.question('Enter the code from that page here: ', function(code) {
-    console.log("================code",code);
     rl.close();
     oauth2Client.getToken(code, function(err, token) {
       if (err) {
-        oauth2Client.credentials = token;
         console.log('Error while trying to retrieve access token', err);
         return;
       }
       oauth2Client.credentials = token;
-      console.log("====================token",token);
       storeToken(token);
-      var authDetail = oauth2Client;
       //callback(oauth2Client);
-      //listEvents(oauth2Client);
     });
   });
 }
 
 function storeToken(token) {
+  console.log(token);
   try {
     fs.mkdirSync(TOKEN_DIR);
   } catch (err) {
@@ -127,29 +126,29 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-// function listEvents(auth) {
-//   var event = {
-//     'summary': 'Google I/O 2015',
-//     'start': {
-//       'date': '03-06-2016'
-//     },
-//     'end': {
-//       'date': '04-06-2016'
-//     },
-//   };
-//   var calendar = google.calendar('v3');
-//   calendar.events.insert({
-//     auth: auth,
-//     calendarId: 'himanshu.sharma@viithiisys.com',
-//     resource: event,
-//   }, function(err, event) {
-//     if (err) {
-//       console.log('There was an error contacting the Calendar service: ' + err);
-//       return;
-//     }
-//     console.log('Event created: %s', event.htmlLink);
-//   });
-// }
+function listEvents(auth) {
+  var event = {
+    'summary': 'Google I/O 2015',
+    'start': {
+      'date': '03-06-2016'
+    },
+    'end': {
+      'date': '04-06-2016'
+    },
+  };
+  var calendar = google.calendar('v3');
+  calendar.events.insert({
+    auth: auth,
+    calendarId: 'himanshu.sharma@viithiisys.com',
+    resource: event,
+  }, function(err, event) {
+    if (err) {
+      console.log('There was an error contacting the Calendar service: ' + err);
+      return;
+    }
+    console.log('Event created: %s', event.htmlLink);
+  });
+}
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
