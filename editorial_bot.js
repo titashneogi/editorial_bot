@@ -390,7 +390,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
     console.log('Event created: %s', event.htmlLink);
   });
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://159.203.111.229/editorial_wiki/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
 
@@ -579,6 +579,6 @@ function showResults(response, convo, n, resultCb){
   });
 
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://159.203.111.229/editorial_wiki/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
