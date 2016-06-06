@@ -584,7 +584,7 @@ function showResults(response, convo, n, resultCb){
   var calendar = google.calendar('v3');
   calendar.events.insert({
     auth: authDetail,
-    calendarId: 'himanshu.sharma@viithiisys.com',
+    calendarId: 'bot.editorial@gmail.com',
     resource: event,
   }, function(err, event) {
     if (err) {
