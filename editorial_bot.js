@@ -10,7 +10,7 @@ var botkit            = require('botkit');
 var STAMPLAY          = require('stamplay');
 var STAMPLAYAPI       = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
 var HTTP              = require('request');
-//var CONFIG            = require('./config.json');
+var CONFIG            = require('./config.json');
 var schedule          = require('node-schedule');
 var LocalStorage      = require('node-localstorage').LocalStorage;
 var localStorage      = new LocalStorage('./scratch');
@@ -22,29 +22,9 @@ var SCOPES            = ['https://www.googleapis.com/auth/calendar'];
 var TOKEN_DIR         = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + '/.credentials/';
 var TOKEN_PATH        = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
 
-//-- getting Token --
-
-if (!process.env.token) {
-  console.log('Error: Specify token in environment');
-  process.exit(1);
-}
-
-var controller = Botkit.slackbot({
-  debug: false
-});
-
-var bot = controller.spawn({
-  token: process.env.token
-})
-
-var message = {
-  channel: 'D1936NDCK',
-  user: 'U1ASBAE9H'
-};
-
 var Bottie = {
   Brain: new Brain(),
-  Ears: new Ears(bot.config.token)
+  Ears: new Ears('xoxb-42990029572-hwPlQmddLKpHiV0SYsO2Y5CT')
 };
 
 var customPhrasesText;
@@ -87,13 +67,11 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
 
 function authorize(credentials) {
   var a = credentials;
-  console.log('==========a==========',a);
   var clientSecret =credentials.web.clientSecret_;
   var clientId = credentials.web.client_id;
   var redirectUrl = credentials.web.javascript_origins[0];
   var auth = new googleAuth();
   var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-  console.log("==========oauth2Client============",oauth2Client);
   fs.readFile(TOKEN_PATH, function(err, token) {
     if (err) {
       console.log(token);
@@ -173,6 +151,24 @@ function storeToken(token) {
 //   });
 // }
 
+if (!process.env.token) {
+  console.log('Error: Specify token in environment');
+  process.exit(1);
+}
+
+var controller = Botkit.slackbot({
+  debug: false
+});
+
+var bot = controller.spawn({
+  token: process.env.token
+})
+
+var message = {
+  channel: 'D1936NDCK',
+  user: 'U1ASBAE9H'
+};
+
 bot.startRTM(function(err) {
   if (err) {
     throw new Error(err);
@@ -191,7 +187,7 @@ bot.startRTM(function(err) {
 controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
   console.log("====message====",message);
   var user = message.user;
-  var token = bot.config.token;
+  var token = CONFIG.token;
 
   HTTP({
     url: 'https://slack.com/api/users.info',
@@ -416,7 +412,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
     console.log('Event created: %s', event.htmlLink);
   });
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://159.203.111.229/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
 
@@ -425,7 +421,6 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 function askStory(response, convo, rcb) {
   console.log("==========askStory==============",response);
   convo.ask("How many stories will you do this week?", function(response, convo) {
-    console.log("++++++++++++++response++++++++++++++++++",response);
     var num = parseInt(response.text);
     if (isNaN(num)){
       convo.say("Please enter Numerical value only.");
@@ -601,6 +596,6 @@ function showResults(response, convo, n, resultCb){
   });
 
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://159.203.111.229:8001/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
