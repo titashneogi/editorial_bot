@@ -416,7 +416,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
     console.log('Event created: %s', event.htmlLink);
   });
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://159.203.111.229/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
 
@@ -425,6 +425,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 function askStory(response, convo, rcb) {
   console.log("==========askStory==============",response);
   convo.ask("How many stories will you do this week?", function(response, convo) {
+    console.log("++++++++++++++response++++++++++++++++++",response);
     var num = parseInt(response.text);
     if (isNaN(num)){
       convo.say("Please enter Numerical value only.");
@@ -600,6 +601,6 @@ function showResults(response, convo, n, resultCb){
   });
 
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://159.203.111.229:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
