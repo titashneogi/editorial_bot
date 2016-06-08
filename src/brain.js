@@ -4,13 +4,11 @@ var NLP = require('natural');
 module.exports = Brain; 
 
 function Brain() {
-  console.log("+++++++++++++++barin++++++++++");
   this.classifier = new NLP.LogisticRegressionClassifier();
   this.minConfidence = 0.7;
 }
 
 Brain.prototype.teach = function(label, phrases) {
-  console.log("++++++++++++++++++teach+++++++++++++++++++e");
   phrases.forEach(function(phrase) {
     console.log('Ingesting example for ' + label + ': ' + phrase);
     this.classifier.addDocument(phrase.toLowerCase(), label);
@@ -19,7 +17,6 @@ Brain.prototype.teach = function(label, phrases) {
 };
 
 Brain.prototype.think = function() {
-  console.log("++++++++++++++++++think+++++++++++++++++++e");
   this.classifier.train();
   return this;
 };

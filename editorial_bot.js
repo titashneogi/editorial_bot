@@ -6,7 +6,6 @@ var Brain             = require('./src/brain');
 var Ears              = require('./src/ears');
 var builtinPhrases    = require('./builtins');
 var Botkit            = require('botkit');
-var botkit            = require('botkit');
 var STAMPLAY          = require('stamplay');
 var STAMPLAYAPI       = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
 var HTTP              = require('request');
@@ -17,12 +16,10 @@ var readline          = require('readline');
 var google            = require('googleapis');
 var googleAuth        = require('google-auth-library');
 var authDetail        = '';
-var SCOPES = ['https://www.googleapis.com/auth/calendar'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-    process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
+var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
+var chrono            = require('chrono-node');
+var key               = require("./editorial-service.json");
 
-console.log("++++++++++++TOKEN_PATH++++++++++++++++",TOKEN_PATH);
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
   process.exit(1);
@@ -58,8 +55,6 @@ try {
 
 console.log('Bottie is learning...');
 Bottie.Teach = Bottie.Brain.teach.bind(Bottie.Brain);
-console.log("+++++++customPhrases++++++++",customPhrases);
-console.log("+++++++builtinPhrases++++++++",builtinPhrases);
 eachKey(customPhrases, Bottie.Teach);
 eachKey(builtinPhrases, Bottie.Teach);
 Bottie.Brain.think();
@@ -71,76 +66,15 @@ function eachKey(object, callback) {
   });
 }
 
-fs.readFile('client_secret.json', function processClientSecrets(err, content) {
+var jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, SCOPES, null);
+ 
+jwtClient.authorize(function(err) {
   if (err) {
-    console.log('Error loading client secret file: ' + err);
+    console.log(err);
     return;
   }
-  authorize(JSON.parse(content));
+  authDetail = jwtClient;
 });
-
-
-function authorize(credentials, callback) {
-  var clientSecret = 'HRRD6NcSee8Ep-mESPKAK1hw';
-  var clientId = '779793103903-blcmut6f3hpn4epu92hsvmicml4ejoqj.apps.googleusercontent.com';
-  var redirectUrl = 'https://botground.slack.com';
-  var auth = new googleAuth();
-  var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-  authDetail = oauth2Client;
-
-  // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, function(err, token) {
-    console.log(token);
-    if (err) {
-      getNewToken(oauth2Client, callback);
-    } else {
-      //getNewToken(oauth2Client, callback);
-      oauth2Client.credentials = JSON.parse(token);
-      console.log(oauth2Client.credentials);
-      // callback(oauth2Client);
-    }
-  });
-}
-
-
-function getNewToken(oauth2Client, callback) {
-  var authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'online',
-    scope: SCOPES
-  });
-  console.log('Authorize this app by visiting this url: ', authUrl);
-  var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  rl.question('Enter the code from that page here: ', function(code) {
-    rl.close();
-    oauth2Client.getToken(code, function(err, token) {
-      if (err) {
-        console.log('Error while trying to retrieve access token', err);
-        return;
-      }
-      oauth2Client.credentials = token;
-      console.log(oauth2Client);
-      storeToken(token);
-      //callback(oauth2Client);
-    });
-  });
-}
-
-function storeToken(token) {
-  console.log(token);
-  try {
-    fs.mkdirSync(TOKEN_DIR);
-  } catch (err) {
-    if (err.code != 'EEXIST') {
-      throw err;
-    }
-  }
-  fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-  console.log('Token stored to ' + TOKEN_PATH);
-}
-
 
 var message = {
   channel: 'D1936NDCK',
@@ -399,6 +333,10 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 function askStory(response, convo, rcb) {
   console.log("==========askStory==============",response);
   convo.ask("How many stories will you do this week?", function(response, convo) {
+    console.log(response);
+    var str = response.text;
+    var split = str.substring(str.indexOf("<")+1,str.lastIndexOf(">"));
+    console.log("=====split====",split);
     var num = parseInt(response.text);
     if (isNaN(num)){
       convo.say("Please enter Numerical value only.");
@@ -525,25 +463,30 @@ function showResults(response, convo, n, resultCb){
     eta: values['What\'s the ETA? Please reply in yyyy-mm-dd format only'],
     otherInfo: values['Anything else you want to mention?']
   }
-  STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
-    console.log("====+++++++=======+++++++=======",data);
-    if(error) {
-      console.log("====channelCb=error====",error);
-      channelCb(error);
-    }
-    console.log("=====data==create==",result);
-
-    if(localStorage.getItem(userId) === null){
-      var storyArray = [];
-      storyArray.push(data);
-      localStorage.setItem(userId,JSON.stringify(storyArray));
-    }else{
-      var storyArray = JSON.parse(localStorage.getItem(userId));
-      storyArray.push(data);
-      localStorage.setItem(userId,JSON.stringify(storyArray));
-    }
-    var channelResult = JSON.parse(result);
-  })
+  // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
+  //   if(error) {
+  //     console.log("====channelCb=error====",error);
+  //     channelCb(error);
+  //   }
+  //   console.log("=====data==create==",result);
+  //   // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
+  //   //   if(error) {
+  //   //   console.log("====channelCb=error====",error);
+  //   //   channelCb(error);
+  //   //   console.log("====channelCb=====",result);
+  //   //   }
+  //   // })
+  //   if(localStorage.getItem(userId) === null){
+  //     var storyArray = [];
+  //     storyArray.push(data);
+  //     localStorage.setItem(userId,JSON.stringify(storyArray));
+  //   }else{
+  //     var storyArray = JSON.parse(localStorage.getItem(userId));
+  //     storyArray.push(data);
+  //     localStorage.setItem(userId,JSON.stringify(storyArray));
+  //   }
+  //   var channelResult = JSON.parse(result);
+  // })
 
   phraseName = data.storyTitle;
   phraseExamples.push(data.description);
@@ -575,7 +518,7 @@ function showResults(response, convo, n, resultCb){
       console.log('There was an error contacting the Calendar service: ' + err);
       return;
     }
-    console.log('Event created: %s', event.htmlLink);
+    console.log('Event created: %s', event);
   });
 
   convo.next();
