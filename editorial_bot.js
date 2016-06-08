@@ -17,7 +17,6 @@ var google            = require('googleapis');
 var googleAuth        = require('google-auth-library');
 var authDetail        = '';
 var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
-var chrono            = require('chrono-node');
 var key               = require("./editorial-service.json");
 
 if (!process.env.token) {
