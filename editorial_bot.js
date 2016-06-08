@@ -462,30 +462,30 @@ function showResults(response, convo, n, resultCb){
     eta: values['What\'s the ETA? Please reply in yyyy-mm-dd format only'],
     otherInfo: values['Anything else you want to mention?']
   }
-  // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
-  //   if(error) {
-  //     console.log("====channelCb=error====",error);
-  //     channelCb(error);
-  //   }
-  //   console.log("=====data==create==",result);
-  //   // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
-  //   //   if(error) {
-  //   //   console.log("====channelCb=error====",error);
-  //   //   channelCb(error);
-  //   //   console.log("====channelCb=====",result);
-  //   //   }
-  //   // })
-  //   if(localStorage.getItem(userId) === null){
-  //     var storyArray = [];
-  //     storyArray.push(data);
-  //     localStorage.setItem(userId,JSON.stringify(storyArray));
-  //   }else{
-  //     var storyArray = JSON.parse(localStorage.getItem(userId));
-  //     storyArray.push(data);
-  //     localStorage.setItem(userId,JSON.stringify(storyArray));
-  //   }
-  //   var channelResult = JSON.parse(result);
-  // })
+  STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
+    if(error) {
+      console.log("====channelCb=error====",error);
+      channelCb(error);
+    }
+    console.log("=====data==create==",result);
+    // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
+    //   if(error) {
+    //   console.log("====channelCb=error====",error);
+    //   channelCb(error);
+    //   console.log("====channelCb=====",result);
+    //   }
+    // })
+    if(localStorage.getItem(userId) === null){
+      var storyArray = [];
+      storyArray.push(data);
+      localStorage.setItem(userId,JSON.stringify(storyArray));
+    }else{
+      var storyArray = JSON.parse(localStorage.getItem(userId));
+      storyArray.push(data);
+      localStorage.setItem(userId,JSON.stringify(storyArray));
+    }
+    var channelResult = JSON.parse(result);
+  })
 
   phraseName = data.storyTitle;
   phraseExamples.push(data.description);
