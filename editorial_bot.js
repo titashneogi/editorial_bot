@@ -265,7 +265,7 @@ function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
 
 function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
   console.log("----------------askStoryETAForEdit----------------");
-  convo.ask("What's the ETA?Please reply in yyyy-mm-dd format only", function(response, convo) {
+  convo.ask("What's the ETA?Please reply in mm-dd format only", function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
     var month = parseInt(date.getMonth() + 1);
@@ -299,11 +299,14 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
   var values = convo.extractResponses();
   convo.say("Story Editing Complete");
   console.log("======values=========",values);
+  var etaInput = values['What\'s the ETA? Please reply in mm-dd format only'];
+  convo.say("iteration finish");
+  var eta = "2016-"+etaInput
    var data = {
     username: userId,
     storyTitle: values['What is the new name of your story?'],
     description: values['Give me a short description that will help others understand.'],
-    eta: values['What\'s the ETA?Please reply in yyyy-mm-dd format only'],
+    eta: eta,
     otherInfo: values['Anything else you want to mention?']
   }
   console.log(data);
