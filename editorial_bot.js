@@ -18,6 +18,9 @@ var googleAuth        = require('google-auth-library');
 var authDetail        = '';
 var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
 var key               = require("./editorial-service.json");
+var str = "no i diont want to";
+var res = str.match(/<@.*>/g);
+console.log(res);
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -66,7 +69,6 @@ function eachKey(object, callback) {
 }
 
 var jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, SCOPES, null);
- 
 jwtClient.authorize(function(err) {
   if (err) {
     console.log(err);
@@ -74,26 +76,37 @@ jwtClient.authorize(function(err) {
   }
   authDetail = jwtClient;
 });
-
-var message = {
-  channel: 'D1936NDCK',
-  user: 'U1ASBAE9H'
-};
-
+var cornjob = JSON.parse(localStorage.getItem('corn_job'));
+console.log(cornjob);
 bot.startRTM(function(err) {
   if (err) {
     throw new Error(err);
   } else {
-    // var j = schedule.scheduleJob('59 1 * * * *', function(){           // for scheduled DM messages commented for now
-    //   bot.startPrivateConversation(message, function(err, convo) {
-    //     convo.say("Awesome.");
-    //   });
-    // });
-    // bot.startPrivateConversation(message, function(err, convo) {
-    //   convo.say("Awesome.");
-    // });
+    for (var j=0; j<cornjob.length ;j++){
+        for(var k=0;k< cornjob[j].username.length;k++){
+          console.log(cornjob[j].username[k]);
+          var message = {};
+          message = {user: cornjob[j].username[k]};
+          console.log("=======",message);
+          schedulingFuncton(message,cornjob[j].eta,cornjob[j].storyTitle);
+        }
+    }
   }
 });
+
+function schedulingFuncton(user,date,title) {
+  console.log("########################",user,date,title);
+  var dataSplit = date.split('-');
+    console.log(dataSplit);
+  var date = new Date(dataSplit[0], dataSplit[1], dataSplit[2], 0, 0, 0);
+  var taskOwnerDatw = new Date(date.getTime() - (2*24*60*60*1000));
+  var j = schedule.scheduleJob(taskOwnerDatw, function(){           // for scheduled DM messages commented for now
+    bot.startPrivateConversation(user, function(err, convo) {
+      convo.say("You have been tagged for task named" + title);
+    });
+  });
+}
+
 
 controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
   console.log("====message====",message);
@@ -330,12 +343,8 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 //------------------------------- create story------------------
 
 function askStory(response, convo, rcb) {
-  console.log("==========askStory==============",response);
   convo.ask("How many stories will you do this week?", function(response, convo) {
     console.log(response);
-    var str = response.text;
-    var split = str.substring(str.indexOf("<")+1,str.lastIndexOf(">"));
-    console.log("=====split====",split);
     var num = parseInt(response.text);
     if (isNaN(num)){
       convo.say("Please enter Numerical value only.");
@@ -345,18 +354,14 @@ function askStory(response, convo, rcb) {
       });
     }else{
       convo.say("Awesome.");
-      console.log("========num====",num);
       var i = 0;
       (function init() {
-        console.log("========i====",i);
         var n = i + 1;
-        console.log("========n====",n);
         if(i === num){
           return true;
         } else {
           convo.next();
           askStoryName(response, convo, n, function(cb) {
-            console.log("======cb========");
             i++;
             init();
           });
@@ -367,7 +372,6 @@ function askStory(response, convo, rcb) {
 }
 
 function askStoryName(response, convo, n, cb) {
-  console.log("+++++++++++askStoryName++++++++++");
   convo.ask("What is the name of your "+n+"th story?", function(response, convo) {
     console.log(response.text);
     console.log(response.user);
@@ -387,7 +391,6 @@ function askStoryName(response, convo, n, cb) {
         }
       }
       if (status === true){
-        console.log("+++++++++++++++++++++++++++++++");
         convo.say("You have Already existing Story with this name, Please enter Diffrent name")
           convo.next();
           askStoryName(response, convo, n, function(descCb) {
@@ -406,7 +409,6 @@ function askStoryName(response, convo, n, cb) {
 }
 
 function askStoryDescription(response, convo, n, descCb) {
-  console.log("+++++++++++askStoryDescription++++++++++");
   convo.ask("Give me a short description that will help others understand.", function(response, convo) {
     convo.next();
     askStoryETA(response, convo, n, function(etaCb) {
@@ -416,8 +418,7 @@ function askStoryDescription(response, convo, n, descCb) {
 }
 
 function askStoryETA(response, convo, n, etaCb) {
-  console.log("+++++++++++askStoryETA++++++++++");
-  convo.ask("What's the ETA? Please reply in yyyy-mm-dd format only", function(response, convo) {
+  convo.ask("What's the ETA? Please reply in mm-dd format only", function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
     var month = parseInt(date.getMonth() + 1);
@@ -437,7 +438,6 @@ function askStoryETA(response, convo, n, etaCb) {
 }
 
 function askStoryOtherInfo(response, convo, n, infoCb) {
-  console.log("+++++++++++askStoryOtherInfo++++++++++");
   convo.ask("Anything else you want to mention?", function(response, convo) {
     convo.next();
     showResults(response, convo, n, function(resultCb) {
@@ -449,32 +449,23 @@ function askStoryOtherInfo(response, convo, n, infoCb) {
 function showResults(response, convo, n, resultCb){
   var phraseExamples = [];
   var phraseName;
-  console.log("asdsadsadsadasdsad================",authDetail);
   console.log("===============",convo.source_message.user);
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
+  var etaInput = values['What\'s the ETA? Please reply in mm-dd format only'];
   convo.say("iteration finish");
-  console.log("======values=========",values);
+  var eta = "2016-"+etaInput
   var data = {
     username: userId,
     storyTitle: values['What is the name of your '+n+'th story?'],
     description: values['Give me a short description that will help others understand.'],
-    eta: values['What\'s the ETA? Please reply in yyyy-mm-dd format only'],
+    eta: eta,
     otherInfo: values['Anything else you want to mention?']
   }
   STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
     if(error) {
-      console.log("====channelCb=error====",error);
       channelCb(error);
     }
-    console.log("=====data==create==",result);
-    // STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
-    //   if(error) {
-    //   console.log("====channelCb=error====",error);
-    //   channelCb(error);
-    //   console.log("====channelCb=====",result);
-    //   }
-    // })
     if(localStorage.getItem(userId) === null){
       var storyArray = [];
       storyArray.push(data);
@@ -484,7 +475,47 @@ function showResults(response, convo, n, resultCb){
       storyArray.push(data);
       localStorage.setItem(userId,JSON.stringify(storyArray));
     }
-    var channelResult = JSON.parse(result);
+    var str  = JSON.stringify(data.otherInfo);
+    if (str.match(/<@.*>/g) !== null){
+      var res = str.match(/<@.*>/g)[0].split(' ');
+      var blankArray = [];
+      for (var i =0;i< res.length;i++){
+        var result = res[i].match(/<@.*>/g)
+        if (result !== null){
+          var split = result[0].substring(str.indexOf("<@")+1,str.indexOf(">")-1);
+          if(blankArray.indexOf(split) === -1){
+            blankArray.push(split);
+          }
+        }
+      }
+      var a =  JSON.parse(result)
+      var assignData = {
+        username:blankArray,
+        eta: data.eta,
+        storyTitle: data.storyTitle,
+        description: data.description,
+        draft_id: a._id
+      }
+      STAMPLAYAPI.Object('task_assign').save(assignData, function(error, result) {
+        if(error) {
+        console.log("====channelCb=error====",error);
+        }
+        for(var i=0;k< assignData.username.length;i++){
+          var userID = {};
+          userID = {user: assignData.username[i]};
+          schedulingFuncton(userID,assignData.eta,assignData.storyTitle);
+        }
+        var taskArray = [];
+        if(localStorage.getItem('corn_job') === null){
+          taskArray.push(assignData);
+          localStorage.setItem('corn_job',JSON.stringify(taskArray));
+        }else{
+          var taskArray = JSON.parse(localStorage.getItem('corn_job'));
+          taskArray.push(assignData);
+          localStorage.setItem('corn_job',JSON.stringify(taskArray));
+        }
+      })
+    }
   })
 
   phraseName = data.storyTitle;
@@ -507,7 +538,6 @@ function showResults(response, convo, n, resultCb){
     },
   };
   var calendar = google.calendar('v3');
-  console.log(authDetail);
   calendar.events.insert({
     auth: authDetail,
     calendarId: 'bot.editorial@gmail.com',
