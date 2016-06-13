@@ -19,8 +19,6 @@ var authDetail        = '';
 var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
 var key               = require("./editorial-service.json");
 
-var storyArray = JSON.parse(localStorage.getItem('U1ASBAE9H'));
-console.log(storyArray);
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -319,6 +317,20 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
       }
       console.log("=====memory data==update==",result);
       var str  = JSON.stringify(data.otherInfo);
+
+      var storyArray = [];
+      var storyArray = JSON.parse(localStorage.getItem(userId));
+      for(var i =0;i<storyArray.length;i++){
+        if(storyArray[i].storyTitle == data.storyTitle){
+          storyArray[i].description = data.description;
+          storyArray[i].eta = data.eta;
+          storyArray[i].otherInfo = data.otherInfo;
+          localStorage.setItem(userId,JSON.stringify(storyArray));
+        }
+      }
+
+      localStorage.setItem(userId,JSON.stringify(storyArray));
+
       if (str.match(/<@.*>/g) !== null){
         var res = str.match(/<@.*>/g)[0].split(' ');
         console.log(res);
