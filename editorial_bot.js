@@ -18,9 +18,9 @@ var googleAuth        = require('google-auth-library');
 var authDetail        = '';
 var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
 var key               = require("./editorial-service.json");
-var str = "no i diont want to";
-var res = str.match(/<@.*>/g);
-console.log(res);
+
+var storyArray = JSON.parse(localStorage.getItem('U1ASBAE9H'));
+console.log(storyArray);
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -166,8 +166,8 @@ controller.hears(['story idea','edit story idea'],['ambient'], function(bot, mes
 
 function askStoryForEdit(response, convo) {
   console.log("==========askStory==============",response,"---conve-----",convo.source_message.user);
-    STAMPLAYAPI.Query('object', 'draft_story').equalTo('username', convo.source_message.user).exec(function(error, result) {
-        if(error) {
+  STAMPLAYAPI.Object("draft_story").get({page: 1, per_page: 100,username: convo.source_message.user}, function(err, result) {
+    if(err) {
             console.log("====cb=error====",error);
         }
           var memoryResult = JSON.parse(result);
@@ -225,6 +225,7 @@ function askStoryForEdit(response, convo) {
 }
 
 function askStoryNameForEdit(response, convo,idOfStory, cb) {
+  console.log("================",idOfStory);
   convo.ask("What is the new name of your story?", function(response, convo) {
     console.log(response.text);
     console.log(response.user);
@@ -254,7 +255,7 @@ function askStoryNameForEdit(response, convo,idOfStory, cb) {
 }
 
 function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
-  console.log("----------------askStoryDescriptionForEdit----------------");
+  console.log("----------------askStoryDescriptionForEdit----------------",idOfStory);
   convo.ask("Give me a short description that will help others understand.", function(response, convo) {
     convo.next();
     askStoryETAForEdit(response, convo,idOfStory, function(etaCb) {
@@ -264,20 +265,20 @@ function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
 }
 
 function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
-  console.log("----------------askStoryETAForEdit----------------");
-  convo.ask("What's the ETA?Please reply in mm-dd format only", function(response, convo) {
+  console.log("----------------askStoryETAForEdit----------------",idOfStory);
+  convo.ask("What's the ETA? Please reply in mm-dd format only", function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
     var month = parseInt(date.getMonth() + 1);
     var year = parseInt(date.getDate());
     if (isNaN(day && month && year)){
       convo.next();
-      askStoryETAForEdit(response, convo, n, function(infoCb) {
+      askStoryETAForEdit(response, convo,idOfStory, function(infoCb) {
         etaCb();
       });
     }else{
       convo.next();
-      askStoryOtherInfoForEdit(response, convo, n, function(infoCb) {
+      askStoryOtherInfoForEdit(response, convo,idOfStory, function(infoCb) {
         etaCb();
       });
     }
@@ -285,6 +286,7 @@ function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
 }
 
 function askStoryOtherInfoForEdit(response, convo,idOfStory,infoCb) {
+  console.log("asdasd;aksdklas;ld;lasd;las",idOfStory);
   convo.ask("Anything else you want to mention?", function(response, convo) {
     convo.next();
     showResultsForEdit(response, convo,idOfStory, function(resultCb) {
@@ -301,8 +303,8 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
   console.log("======values=========",values);
   var etaInput = values['What\'s the ETA? Please reply in mm-dd format only'];
   convo.say("iteration finish");
-  var eta = "2016-"+etaInput
-   var data = {
+  var eta = "2016-"+etaInput;
+  var data = {
     username: userId,
     storyTitle: values['What is the new name of your story?'],
     description: values['Give me a short description that will help others understand.'],
@@ -316,6 +318,60 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
           console.log("====updateMemoryCb=error====",error);
       }
       console.log("=====memory data==update==",result);
+      var str  = JSON.stringify(data.otherInfo);
+      if (str.match(/<@.*>/g) !== null){
+        var res = str.match(/<@.*>/g)[0].split(' ');
+        console.log(res);
+        var blankArray = [];
+        for (var i =0;i< res.length;i++){
+          var mactchfind = res[i].match(/<@.*>/g)
+          if (mactchfind !== null){
+            var split = mactchfind[0].substring(str.indexOf("<@")+1,str.indexOf(">")-1);
+            console.log(split);
+
+            if(blankArray.indexOf(split) === -1){
+              console.log("dasdasdasdasdasd======");
+              blankArray.push(split);
+            }
+          }
+        }
+        var a =  JSON.parse(result)
+        console.log()
+        var assignData = {
+          username:blankArray,
+          eta: data.eta,
+          storyTitle: data.storyTitle,
+          description: data.description,
+          draft_id: a._id
+        }
+        console.log("assignData=============",assignData)
+        STAMPLAYAPI.Query('object', 'task_assign').equalTo('draft_id',idOfStory ).exec(function(error, getResult) {
+          if(error) {
+              console.log("====updateMemoryCb=error====",error);
+          }
+          STAMPLAYAPI.Object('task_assign').update(getResult._id,assignData, function(error, updateresult) {
+            if(error) {
+            console.log("====channelCb=error====",error);
+            }
+            console.log("--------------updateresult--------------",updateresult);
+            for(var i=0;i< assignData.username.length;i++){
+              var userID = {};
+              userID = {user: assignData.username[i]};
+              schedulingFuncton(userID,assignData.eta,assignData.storyTitle);
+            }
+            var taskArray = [];
+            if(localStorage.getItem('corn_job') === null){
+              taskArray.push(assignData);
+              localStorage.setItem('corn_job',JSON.stringify(taskArray));
+            }else{
+              var taskArray = JSON.parse(localStorage.getItem('corn_job'));
+              taskArray.push(assignData);
+              localStorage.setItem('corn_job',JSON.stringify(taskArray));
+            }
+          })
+        })
+      }
+
   })
   var event = {
     'summary': data.storyTitle,
@@ -339,9 +395,10 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
     console.log('Event created: %s', event.htmlLink);
   });
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://159.203.111.229/editorial_wiki/#/storylist/"+ convo.source_message.user);
+  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
   resultCb();
 }
+
 
 //------------------------------- create story------------------
 
@@ -457,7 +514,7 @@ function showResults(response, convo, n, resultCb){
   var values = convo.extractResponses();
   var etaInput = values['What\'s the ETA? Please reply in mm-dd format only'];
   convo.say("iteration finish");
-  var eta = "2016-"+etaInput
+  var eta = "2016-"+etaInput;
   var data = {
     username: userId,
     storyTitle: values['What is the name of your '+n+'th story?'],
@@ -503,7 +560,7 @@ function showResults(response, convo, n, resultCb){
         if(error) {
         console.log("====channelCb=error====",error);
         }
-        for(var i=0;k< assignData.username.length;i++){
+        for(var i=0;i< assignData.username.length;i++){
           var userID = {};
           userID = {user: assignData.username[i]};
           schedulingFuncton(userID,assignData.eta,assignData.storyTitle);
