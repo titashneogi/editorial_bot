@@ -1,5 +1,5 @@
 'use strict'
-
+var stamplayData      = require("./config.json");
 var fs                = require('fs');
 var Train             = require('./src/train');
 var Brain             = require('./src/brain');
@@ -7,7 +7,7 @@ var Ears              = require('./src/ears');
 var builtinPhrases    = require('./builtins');
 var Botkit            = require('botkit');
 var STAMPLAY          = require('stamplay');
-var STAMPLAYAPI       = new STAMPLAY('editorial', '014c500eb36e454abaeb872a571fc036fda47b7073ebcf5581ca001af9d75419');
+var STAMPLAYAPI       = new STAMPLAY(stamplayData.project_name, stamplayData.stamplay_ID);
 var HTTP              = require('request');
 var schedule          = require('node-schedule');
 var LocalStorage      = require('node-localstorage').LocalStorage;
