@@ -80,7 +80,8 @@ bot.startRTM(function(err) {
   if (err) {
     throw new Error(err);
   } else {
-    for (var j=0; j<cornjob.length ;j++){
+    if(cornjob !== null){
+      for (var j=0; j<cornjob.length ;j++){
         for(var k=0;k< cornjob[j].username.length;k++){
           console.log(cornjob[j].username[k]);
           var message = {};
@@ -88,6 +89,7 @@ bot.startRTM(function(err) {
           console.log("=======",message);
           schedulingFuncton(message,cornjob[j].eta,cornjob[j].storyTitle);
         }
+      }
     }
   }
 });
