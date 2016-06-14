@@ -21,13 +21,13 @@ var key               = require("./editorial-service.json");
 var express           = require("express");
 var app               = express();
 
-app.set('port', process.env.PORT || 3000);
-app.listen(app.get('port'));
-console.log('Express server listening on port %s in %s mode', app.get('port'), app.get('env'));
+// app.set('port', process.env.PORT || 3000);
+// app.listen(app.get('port'));
+// console.log('Express server listening on port %s in %s mode', app.get('port'), app.get('env'));
 
-app.get('/', function(req, res){
-    res.send('hello world');
-});
+// app.get('/', function(req, res){
+//     res.send('hello world');
+// });
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -563,9 +563,9 @@ function showResults(response, convo, n, resultCb){
       var res = str.match(/<@.*>/g)[0].split(' ');
       var blankArray = [];
       for (var i =0;i< res.length;i++){
-        var result = res[i].match(/<@.*>/g)
-        if (result !== null){
-          var split = result[0].substring(str.indexOf("<@")+1,str.indexOf(">")-1);
+        var mactchfind = res[i].match(/<@.*>/g)
+        if (mactchfind !== null){
+          var split = mactchfind[0].substring(str.indexOf("<@")+1,str.indexOf(">")-1);
           if(blankArray.indexOf(split) === -1){
             blankArray.push(split);
           }
