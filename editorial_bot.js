@@ -18,6 +18,12 @@ var googleAuth        = require('google-auth-library');
 var authDetail        = '';
 var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
 var key               = require("./editorial-service.json");
+var express           = require("express");
+var app               = express();
+
+app.set('port', process.env.PORT || 3000);
+app.listen(app.get('port'));
+console.log('Express server listening on port %s in %s mode', app.get('port'), app.get('env'));
 
 
 if (!process.env.token) {
