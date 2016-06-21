@@ -429,28 +429,33 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 function askStory(response, convo, rcb) {
   convo.ask("How many story ideas do you have for now ? I will loop through that many times in this conversation.", function(response, convo) {
     console.log(response);
-    var num = parseInt(response.text);
-    if (isNaN(num)){
-      convo.say("Please enter Numerical value only.");
+    if(response.text == "exit"){
       convo.next();
-      askStory(response, convo, function(cb) {
-        rcb();
-      });
+      convo.say("Thank You");
     }else{
-      convo.say("Awesome! Upnext, some story details.");
-      var i = 0;
-      (function init() {
-        var n = i + 1;
-        if(i === num){
-          return true;
-        } else {
-          convo.next();
-          askStoryName(response, convo, n, function(cb) {
-            i++;
-            init();
-          });
-        }
-      })();
+      var num = parseInt(response.text);
+      if (isNaN(num)){
+        convo.say("Please enter Numerical value only.");
+        convo.next();
+        askStory(response, convo, function(cb) {
+          rcb();
+        });
+      }else{
+        convo.say("Awesome! Upnext, some story details.");
+        var i = 0;
+        (function init() {
+          var n = i + 1;
+          if(i === num){
+            return true;
+          } else {
+            convo.next();
+            askStoryName(response, convo, n, function(cb) {
+              i++;
+              init();
+            });
+          }
+        })();
+      }
     }
   });
 }
@@ -459,75 +464,94 @@ function askStoryName(response, convo, n, cb) {
   convo.ask("What is the name of your story #"+n, function(response, convo) {
     console.log(response.text);
     console.log(response.user);
-    var userData = JSON.parse(localStorage.getItem(response.user));
-
-    if(userData == null){
-      convo.say("Ok.")
+    if(response.text == "exit"){
       convo.next();
-      askStoryDescription(response, convo, n, function(descCb) {
-        cb();
-      });
+      convo.say("Thank You");
     }else{
-      var status = false;
-      for(var i = 0 ; i < userData.length ; i++){
-        if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
-          status = true;
-        }
-      }
-      if (status === true){
-        convo.say("Looks like you already have a similar story. Do something different this time?")
-          convo.next();
-          askStoryName(response, convo, n, function(descCb) {
-            cb();
-        });
-      }
-      if (status === false){
+      var userData = JSON.parse(localStorage.getItem(response.user));
+      if(userData == null){
         convo.say("Ok.")
         convo.next();
         askStoryDescription(response, convo, n, function(descCb) {
           cb();
         });
+      }else{
+        var status = false;
+        for(var i = 0 ; i < userData.length ; i++){
+          if(response.text === userData[i].storyTitle && response.user === userData[i].username ){
+            status = true;
+          }
+        }
+        if (status === true){
+          convo.say("Looks like you already have a similar story. Do something different this time?")
+            convo.next();
+            askStoryName(response, convo, n, function(descCb) {
+              cb();
+          });
+        }
+        if (status === false){
+          convo.say("Ok.")
+          convo.next();
+          askStoryDescription(response, convo, n, function(descCb) {
+            cb();
+          });
+        }
       }
     }
   });
 }
 
 function askStoryDescription(response, convo, n, descCb) {
-  convo.ask('Give me a short description that will help others understand what this story is about. The more information, the merrier - but not the whole story either. :slightly_smiling_face:', function(response, convo) {
-    convo.next();
-    askStoryETA(response, convo, n, function(etaCb) {
-      descCb();
+  if(response.text == "exit"){
+      convo.next();
+      convo.say("Thank You");
+  }else{
+    convo.ask('Give me a short description that will help others understand what this story is about. The more information, the merrier - but not the whole story either. :slightly_smiling_face:', function(response, convo) {
+      convo.next();
+      askStoryETA(response, convo, n, function(etaCb) {
+        descCb();
+      });
     });
-  });
+  }
 }
 
 function askStoryETA(response, convo, n, etaCb) {
-  convo.ask("Hate to push you, but I must ask - What's the ETA? Please reply in mm-dd format only", function(response, convo) {
-    var date = new Date(response.text);
-    var day = parseInt(date.getFullYear());
-    var month = parseInt(date.getMonth() + 1);
-    var year = parseInt(date.getDate());
-    if (isNaN(day && month && year)){
+  if(response.text == "exit"){
       convo.next();
-      askStoryETA(response, convo, n, function(infoCb) {
-        etaCb();
-      });
-    }else{
-      convo.next();
-      askStoryOtherInfo(response, convo, n, function(infoCb) {
-        etaCb();
-      });
-    }
-  });
+      convo.say("Thank You");
+  }else{
+    convo.ask("Hate to push you, but I must ask - What's the ETA? Please reply in mm-dd format only", function(response, convo) {
+      var date = new Date(response.text);
+      var day = parseInt(date.getFullYear());
+      var month = parseInt(date.getMonth() + 1);
+      var year = parseInt(date.getDate());
+      if (isNaN(day && month && year)){
+        convo.next();
+        askStoryETA(response, convo, n, function(infoCb) {
+          etaCb();
+        });
+      }else{
+        convo.next();
+        askStoryOtherInfo(response, convo, n, function(infoCb) {
+          etaCb();
+        });
+      }
+    });
+  }
 }
 
 function askStoryOtherInfo(response, convo, n, infoCb) {
-  convo.ask('Anything else you want to mention? If you @mention people who you need stuff from, I can remind them about this.', function(response, convo) {
-    convo.next();
-    showResults(response, convo, n, function(resultCb) {
-      infoCb();
+  if(response.text == "exit"){
+      convo.next();
+      convo.say("Thank You");
+  }else{
+    convo.ask('Anything else you want to mention? If you @mention people who you need stuff from, I can remind them about this.', function(response, convo) {
+      convo.next();
+      showResults(response, convo, n, function(resultCb) {
+        infoCb();
+      });
     });
-  });
+  }
 }
 
 function showResults(response, convo, n, resultCb){
