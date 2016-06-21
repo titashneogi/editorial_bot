@@ -83,6 +83,7 @@ jwtClient.authorize(function(err) {
   }
   authDetail = jwtClient;
 });
+
 var cornjob = JSON.parse(localStorage.getItem('corn_job'));
 console.log(cornjob);
 bot.startRTM(function(err) {
