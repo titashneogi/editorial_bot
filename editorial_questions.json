@@ -1,0 +1,19 @@
+{
+	"numberOFStories": "How many story ideas do you have for now ? I will loop through that many times in this conversation.",
+	"continueToStoryTitle":"Awesome! Upnext, some story details.",
+	"story_title": "What is the name of your story #",
+	"sameStoryTitleReply": "Looks like you already have a similar story. Do something different this time.",
+	"description": "Give me a short description that will help others understand what this story is about. The more information, the merrier - but not the whole story either. :slightly_smiling_face:",
+	"eta":"Hate to push you, but I must ask - What's the ETA? Please reply in mm-dd format only",
+	"otherInfo": "Anything else you want to mention? If you @mention people who you need stuff from, I can remind them about this.",
+	"iteration_complete":"Ok, looks like you are done on this one.",
+	"storyLink":"To see your Stories List please Visit -> http://159.203.111.229/editorial_wiki/#/storylist/",
+	"storyTitleToEdit" : "Which idea you want to Edit? Stories you have created",
+	"storyTitleNameToEdit": "Please Enter story name which you want to edit",
+	"newStoryTitle":"What is the new name of your story?",
+	"sameStoryTitleReplyEdit":"You have Already existing Story with this name, Please enter Diffrent name",
+	"descriptionToEdit":"Give me a short description that will help others understand.",
+	"etaToEdit":"What's the ETA? Please reply in mm-dd format only",
+	"otherInfotoEdit": "Anything else you want to mention?",
+	"editComplete": "Story editing complete."
+}

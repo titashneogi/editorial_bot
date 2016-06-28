@@ -20,6 +20,7 @@ var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www
 var key               = require("./editorial-service.json");
 var express           = require("express");
 var app               = express();
+var EDITORIAL_QUESTIONS   = require("./editorial_questions.json");
 
 app.set('port', process.env.PORT || 3000);
 app.listen(app.get('port'));
@@ -135,7 +136,7 @@ controller.hears(['story idea','edit story idea'],['ambient'], function(bot, mes
     } else {
       body = JSON.parse(body);
       console.log("===email===",body.user.profile.email);
-      console.log("===username===",body.user.name);
+      console.log("===id===",body.user.id);
       STAMPLAYAPI.User.get({'email': body.user.profile.email}, function(err, res) {
         if(err) return console.log(err);
         var result = JSON.parse(res);
@@ -188,8 +189,8 @@ function askStoryForEdit(response, convo) {
               var listString = memoryResult.data[j].storyTitle;
               test = test + "\n" + listString;
             }
-            convo.say("Which idea you want to Edit? Stories you have created" + test);
-            convo.ask("Please Enter story name which you want to edit", function(response, convo) {
+            convo.say(EDITORIAL_QUESTIONS.storyTitleToEdit + test);
+            convo.ask(EDITORIAL_QUESTIONS.storyTitleNameToEdit, function(response, convo) {
               console.log(response.text);
 
               for(var i = 0; i < memoryResult.data.length; i++){
@@ -236,7 +237,7 @@ function askStoryForEdit(response, convo) {
 
 function askStoryNameForEdit(response, convo,idOfStory, cb) {
   console.log("================",idOfStory);
-  convo.ask("What is the new name of your story?", function(response, convo) {
+  convo.ask(EDITORIAL_QUESTIONS.newStoryTitle, function(response, convo) {
     console.log(response.text);
     console.log(response.user);
     var userData = JSON.parse(localStorage.getItem(response.user));
@@ -249,7 +250,7 @@ function askStoryNameForEdit(response, convo,idOfStory, cb) {
     }
     if(storyExist == true){
       console.log("+++++++++++++++++++++++++++++++");
-      convo.say("You have Already existing Story with this name, Please enter Diffrent name")
+      convo.say(EDITORIAL_QUESTIONS.sameStoryTitleReplyEdit)
       convo.next();
       askStoryNameForEdit(response, convo,idOfStory, function(descCb) {
         cb();
@@ -266,7 +267,7 @@ function askStoryNameForEdit(response, convo,idOfStory, cb) {
 
 function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
   console.log("----------------askStoryDescriptionForEdit----------------",idOfStory);
-  convo.ask("Give me a short description that will help others understand.", function(response, convo) {
+  convo.ask(EDITORIAL_QUESTIONS.descriptionToEdit, function(response, convo) {
     convo.next();
     askStoryETAForEdit(response, convo,idOfStory, function(etaCb) {
       descCb();
@@ -276,7 +277,7 @@ function askStoryDescriptionForEdit(response, convo,idOfStory, descCb) {
 
 function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
   console.log("----------------askStoryETAForEdit----------------",idOfStory);
-  convo.ask("What's the ETA? Please reply in mm-dd format only", function(response, convo) {
+  convo.ask(EDITORIAL_QUESTIONS.etaToEdit, function(response, convo) {
     var date = new Date(response.text);
     var day = parseInt(date.getFullYear());
     var month = parseInt(date.getMonth() + 1);
@@ -297,7 +298,7 @@ function askStoryETAForEdit(response, convo,idOfStory, etaCb) {
 
 function askStoryOtherInfoForEdit(response, convo,idOfStory,infoCb) {
   console.log("asdasd;aksdklas;ld;lasd;las",idOfStory);
-  convo.ask("Anything else you want to mention?", function(response, convo) {
+  convo.ask(EDITORIAL_QUESTIONS.otherInfotoEdit, function(response, convo) {
     convo.next();
     showResultsForEdit(response, convo,idOfStory, function(resultCb) {
       infoCb();
@@ -309,17 +310,17 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
   console.log("===============",convo.source_message.user);
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
-  convo.say("Story Editing Complete");
+  convo.say(EDITORIAL_QUESTIONS.editComplete);
   console.log("======values=========",values);
-  var etaInput = values['What\'s the ETA? Please reply in mm-dd format only'];
+  var etaInput = values[EDITORIAL_QUESTIONS.etaToEdit];
   convo.say("iteration finish");
   var eta = "2016-"+etaInput;
   var data = {
     username: userId,
-    storyTitle: values['What is the new name of your story?'],
-    description: values['Give me a short description that will help others understand.'],
+    storyTitle: values[EDITORIAL_QUESTIONS.newStoryTitle],
+    description: values[EDITORIAL_QUESTIONS.descriptionToEdit],
     eta: eta,
-    otherInfo: values['Anything else you want to mention?']
+    otherInfo: values[EDITORIAL_QUESTIONS.otherInfotoEdit]
   }
   console.log(data);
 
@@ -419,7 +420,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
     console.log('Event created: %s', event.htmlLink);
   });
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://localhost:8001/#/storylist/"+ convo.source_message.user);
+  convo.say(EDITORIAL_QUESTIONS.storyLink+ convo.source_message.user);
   resultCb();
 }
 
@@ -427,7 +428,7 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 //------------------------------- create story------------------
 
 function askStory(response, convo, rcb) {
-  convo.ask("How many story ideas do you have for now ? I will loop through that many times in this conversation.", function(response, convo) {
+  convo.ask(EDITORIAL_QUESTIONS.numberOFStories, function(response, convo) {
     console.log(response);
     if(response.text == "exit"){
       convo.next();
@@ -441,7 +442,7 @@ function askStory(response, convo, rcb) {
           rcb();
         });
       }else{
-        convo.say("Awesome! Upnext, some story details.");
+        convo.say(EDITORIAL_QUESTIONS.continueToStoryTitle);
         var i = 0;
         (function init() {
           var n = i + 1;
@@ -461,7 +462,7 @@ function askStory(response, convo, rcb) {
 }
 
 function askStoryName(response, convo, n, cb) {
-  convo.ask("What is the name of your story #"+n, function(response, convo) {
+  convo.ask(EDITORIAL_QUESTIONS.story_title + n, function(response, convo) {
     console.log(response.text);
     console.log(response.user);
     if(response.text == "exit"){
@@ -483,7 +484,7 @@ function askStoryName(response, convo, n, cb) {
           }
         }
         if (status === true){
-          convo.say("Looks like you already have a similar story. Do something different this time?")
+          convo.say(EDITORIAL_QUESTIONS.sameStoryTitleReply)
             convo.next();
             askStoryName(response, convo, n, function(descCb) {
               cb();
@@ -506,7 +507,7 @@ function askStoryDescription(response, convo, n, descCb) {
       convo.next();
       convo.say("Thank You");
   }else{
-    convo.ask('Give me a short description that will help others understand what this story is about. The more information, the merrier - but not the whole story either. :slightly_smiling_face:', function(response, convo) {
+    convo.ask(EDITORIAL_QUESTIONS.description, function(response, convo) {
       convo.next();
       askStoryETA(response, convo, n, function(etaCb) {
         descCb();
@@ -520,7 +521,7 @@ function askStoryETA(response, convo, n, etaCb) {
       convo.next();
       convo.say("Thank You");
   }else{
-    convo.ask("Hate to push you, but I must ask - What's the ETA? Please reply in mm-dd format only", function(response, convo) {
+    convo.ask(EDITORIAL_QUESTIONS.eta, function(response, convo) {
       var date = new Date(response.text);
       var day = parseInt(date.getFullYear());
       var month = parseInt(date.getMonth() + 1);
@@ -545,7 +546,7 @@ function askStoryOtherInfo(response, convo, n, infoCb) {
       convo.next();
       convo.say("Thank You");
   }else{
-    convo.ask('Anything else you want to mention? If you @mention people who you need stuff from, I can remind them about this.', function(response, convo) {
+    convo.ask(EDITORIAL_QUESTIONS.otherInfo, function(response, convo) {
       convo.next();
       showResults(response, convo, n, function(resultCb) {
         infoCb();
@@ -560,17 +561,17 @@ function showResults(response, convo, n, resultCb){
   console.log("===============",convo.source_message.user);
   var userId = convo.source_message.user;
   var values = convo.extractResponses();
-  var etaInput = values['Hate to push you, but I must ask - What\'s the ETA? Please reply in mm-dd format only'];
-  convo.say("Ok, looks like you are done on this one.");
+  var etaInput = values[EDITORIAL_QUESTIONS.eta];
+  convo.say(EDITORIAL_QUESTIONS.iteration_complete);
   var eta = "2016-"+etaInput;
   var data = {
     username: userId,
-    storyTitle: values['What is the name of your story #'+n],
-    description: values['Give me a short description that will help others understand what this story is about. The more information, the merrier - but not the whole story either. :slightly_smiling_face:'],
+    storyTitle: values[EDITORIAL_QUESTIONS.story_title + n],
+    description: values[EDITORIAL_QUESTIONS.description],
     eta: eta,
-    otherInfo: values['Anything else you want to mention? If you @mention people who you need stuff from, I can remind them about this.']
+    otherInfo: values[EDITORIAL_QUESTIONS.otherInfo]
   }
-
+  console.log(data);
   STAMPLAYAPI.Object('draft_story').save(data, function(error, result) {
     if(error) {
       channelCb(error);
@@ -660,6 +661,6 @@ function showResults(response, convo, n, resultCb){
   });
 
   convo.next();
-  convo.say("To see your Stories List please Visit -> http://159.203.111.229/editorial_wiki/#/storylist/"+ convo.source_message.user);
+  convo.say(storyLink + convo.source_message.user);
   resultCb();
 }
