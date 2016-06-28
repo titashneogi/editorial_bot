@@ -91,6 +91,7 @@ bot.startRTM(function(err) {
   if (err) {
     throw new Error(err);
   } else {
+    startSchedular();
     if(cornjob !== null){
       for (var j=0; j<cornjob.length ;j++){
         for(var k=0;k< cornjob[j].username.length;k++){
@@ -105,10 +106,44 @@ bot.startRTM(function(err) {
   }
 });
 
+function startSchedular(){
+  var j = schedule.scheduleJob('* * * * * 1', function(){
+    remindInactiveUsers();
+  });
+}
+
+function remindInactiveUsers() {
+  fs.readdir("./scratch", function(err, items) {
+    for(var i=0;i<items.length;i++){
+      var a = JSON.parse(localStorage.getItem(items[i]));
+      for(var j=0;j<a.length;j++){
+        if(a[j].dt_create){
+          var date1 = new Date(a[j].dt_create);
+          var date2 = new Date();
+          var timeDiff = Math.abs(date2.getTime() - date1.getTime());
+          var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24)); 
+          console.log(diffDays);
+          if(diffDays>7){
+            messageInactiveUsers(a[j].username)
+          }
+        }else{
+        }
+      }
+    }
+  });
+}
+
+function messageInactiveUsers(userID){
+  var user ={
+    user: userID
+  }
+  bot.startPrivateConversation(user, function(err, convo) {
+      convo.say("You have not posted any Story since last week");
+  });
+}
+
 function schedulingFuncton(user,date,title) {
-  console.log("########################",user,date,title);
   var dataSplit = date.split('-');
-    console.log(dataSplit);
   var date = new Date(dataSplit[0], dataSplit[1], dataSplit[2], 0, 0, 0);
   var taskOwnerDatw = new Date(date.getTime() - (2*24*60*60*1000));
   var j = schedule.scheduleJob(taskOwnerDatw, function(){           // for scheduled DM messages commented for now
@@ -577,12 +612,13 @@ function showResults(response, convo, n, resultCb){
       channelCb(error);
     }
     if(localStorage.getItem(userId) === null){
+      result = JSON.parse(result);
       var storyArray = [];
-      storyArray.push(data);
+      storyArray.push(result);
       localStorage.setItem(userId,JSON.stringify(storyArray));
     }else{
       var storyArray = JSON.parse(localStorage.getItem(userId));
-      storyArray.push(data);
+      storyArray.push(result);
       localStorage.setItem(userId,JSON.stringify(storyArray));
     }
     var str  = JSON.stringify(data.otherInfo);
@@ -661,6 +697,6 @@ function showResults(response, convo, n, resultCb){
   });
 
   convo.next();
-  convo.say(storyLink + convo.source_message.user);
+  convo.say(EDITORIAL_QUESTIONS.storyLink + convo.source_message.user);
   resultCb();
 }
