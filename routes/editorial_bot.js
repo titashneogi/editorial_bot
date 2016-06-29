@@ -1,44 +1,25 @@
 'use strict'
-var stamplayData      = require("./config.json");
-var fs                = require('fs');
-var Train             = require('./src/train');
-var Brain             = require('./src/brain');
-var Ears              = require('./src/ears');
-var builtinPhrases    = require('./builtins');
-var Botkit            = require('botkit');
-var STAMPLAY          = require('stamplay');
-var STAMPLAYAPI       = new STAMPLAY(stamplayData.project_name, stamplayData.stamplay_ID);
-var HTTP              = require('request');
-var schedule          = require('node-schedule');
-var LocalStorage      = require('node-localstorage').LocalStorage;
-var localStorage      = new LocalStorage('./scratch');
-var readline          = require('readline');
-var google            = require('googleapis');
-var googleAuth        = require('google-auth-library');
-var authDetail        = '';
-var SCOPES            = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
-var key               = require("./editorial-service.json");
-var express           = require("express");
-var app               = express();
-var EDITORIAL_QUESTIONS   = require("./editorial_questions.json");
-var bodyParser        = require('body-parser');
+var stamplayData          = require("../config.json");
+var fs                    = require('fs');
+var Train                 = require('../src/train');
+var Brain                 = require('../src/brain');
+var Ears                  = require('../src/ears');
+var builtinPhrases        = require('../builtins');
+var Botkit                = require('botkit');
+var STAMPLAY              = require('stamplay');
+var STAMPLAYAPI           = new STAMPLAY(stamplayData.project_name, stamplayData.stamplay_ID);
+var HTTP                  = require('request');
+var schedule              = require('node-schedule');
+var LocalStorage          = require('node-localstorage').LocalStorage;
+var localStorage          = new LocalStorage('./scratch');
+var readline              = require('readline');
+var google                = require('googleapis');
+var googleAuth            = require('google-auth-library');
+var authDetail            = '';
+var SCOPES                = ['https://www.googleapis.com/auth/calendar','https://www.googleapis.com/auth/plus.me'];
+var key                   = require("../editorial-service.json");
+var EDITORIAL_QUESTIONS   = require("../editorial_questions.json");
 
-app.set('port', process.env.PORT || 3000);
-app.listen(app.get('port'));
-console.log('Express server listening on port %s in %s mode', app.get('port'), app.get('env'));
-
-app.get('/', function(req, res){
-    console.log(req);
-    res.send('OK');
-});
-
-app.use(bodyParser.json()); // support json encoded bodies
-app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
-
-app.post('/setup/', function (req, res) {
-  console.log(req.body);
-  res.send('success');
-});
 
 if (!process.env.token) {
   console.log('Error: Specify token in environment');
@@ -61,7 +42,7 @@ var Bottie = {
 var customPhrasesText;
 var customPhrases;
 try {
-  customPhrasesText = fs.readFileSync(__dirname + '/custom-phrases.json').toString();
+  customPhrasesText = fs.readFileSync(__dirname + '/../custom-phrases.json').toString();
 } catch (err) {
   throw new Error('Uh oh, Bottie could not find the ' +
     'custom-phrases.json file, did you move it?');
@@ -163,6 +144,33 @@ function schedulingFuncton(user,date,title) {
   });
 }
 
+controller.hears('setup',['direct_message'], function(bot, message) {
+  console.log("====message====",message);
+  var user = message.user;
+  var token = bot.config.token;
+  HTTP({
+    url: 'https://slack.com/api/users.info',
+    qs: {token: token, user: user},
+    method: 'GET'
+  }, function(error, response, body) {
+    if (error) {
+      console.log('Error sending message: ', error);
+    } else if (response.body.error) {
+      console.log('Error: ', response);
+    } else {
+      body = JSON.parse(body);
+      console.log("===email===",body.user.profile.email);
+      console.log("===id===",body.user.is_admin);
+      if(body.user.is_admin === false){
+        bot.startPrivateConversation(message, notadmin);
+      }
+      if(body.user.is_admin === true){
+        bot.startPrivateConversation(message, setup);
+      }
+      
+    }
+  });
+});
 
 controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
   console.log("====message====",message);
@@ -220,6 +228,12 @@ controller.hears(['story idea','edit story idea'],['ambient'], function(bot, mes
   });
 });
 
+function setup(response, convo){
+  convo.say("For Setup -> http://159.203.111.229/editorial_wiki/#/setup/");
+}
+function notadmin(response, convo){
+  convo.say("Sorry You are not an Admin");
+}
 function askStoryForEdit(response, convo) {
   console.log("==========askStory==============",response,"---conve-----",convo.source_message.user);
   STAMPLAYAPI.Object("draft_story").get({page: 1, per_page: 100,username: convo.source_message.user}, function(err, result) {
@@ -625,11 +639,11 @@ function showResults(response, convo, n, resultCb){
       result = JSON.parse(result);
       var storyArray = [];
       storyArray.push(result);
-      localStorage.setItem(userId,JSON.stringify(storyArray));
+      localStorage.setItem(userId,storyArray);
     }else{
       var storyArray = JSON.parse(localStorage.getItem(userId));
       storyArray.push(result);
-      localStorage.setItem(userId,JSON.stringify(storyArray));
+      localStorage.setItem(userId,storyArray);
     }
     var str  = JSON.stringify(data.otherInfo);
     if (str.match(/<@.*>/g) !== null){
