@@ -389,14 +389,14 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
       }
       console.log("=====memory data==update==",result);
       var str  = JSON.stringify(data.otherInfo);
-
+      result = JSON.parse(result);
       var storyArray = [];
       var storyArray = JSON.parse(localStorage.getItem(userId));
       for(var i =0;i<storyArray.length;i++){
-        if(storyArray[i].storyTitle == data.storyTitle){
-          storyArray[i].description = data.description;
-          storyArray[i].eta = data.eta;
-          storyArray[i].otherInfo = data.otherInfo;
+        if(storyArray[i].storyTitle == result.storyTitle){
+          storyArray[i].description = result.description;
+          storyArray[i].eta = result.eta;
+          storyArray[i].otherInfo = result.otherInfo;
           localStorage.setItem(userId,JSON.stringify(storyArray));
         }
       }
@@ -488,7 +488,6 @@ function showResultsForEdit(response, convo,idOfStory, resultCb){
 
 function askStory(response, convo, rcb) {
   convo.ask(EDITORIAL_QUESTIONS.numberOFStories, function(response, convo) {
-    console.log(response);
     if(response.text == "exit"){
       convo.next();
       convo.say("Thank You");
@@ -522,8 +521,6 @@ function askStory(response, convo, rcb) {
 
 function askStoryName(response, convo, n, cb) {
   convo.ask(EDITORIAL_QUESTIONS.story_title + n, function(response, convo) {
-    console.log(response.text);
-    console.log(response.user);
     if(response.text == "exit"){
       convo.next();
       convo.say("Thank You");
@@ -641,9 +638,10 @@ function showResults(response, convo, n, resultCb){
       storyArray.push(result);
       localStorage.setItem(userId,storyArray);
     }else{
+      result = JSON.parse(result);
       var storyArray = JSON.parse(localStorage.getItem(userId));
       storyArray.push(result);
-      localStorage.setItem(userId,storyArray);
+      localStorage.setItem(userId,JSON.stringify(storyArray));
     }
     var str  = JSON.stringify(data.otherInfo);
     if (str.match(/<@.*>/g) !== null){
