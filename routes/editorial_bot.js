@@ -144,9 +144,11 @@ function schedulingFuncton(user,date,title) {
   });
 }
 
-controller.hears('setup',['direct_message'], function(bot, message) {
+controller.hears('',['direct_message'], function(bot, message) {
   console.log("====message====",message);
   var user = message.user;
+  var text = message.text;
+  var text = text.toLowerCase();
   var token = bot.config.token;
   HTTP({
     url: 'https://slack.com/api/users.info',
@@ -159,37 +161,6 @@ controller.hears('setup',['direct_message'], function(bot, message) {
       console.log('Error: ', response);
     } else {
       body = JSON.parse(body);
-      console.log("===email===",body.user.profile.email);
-      console.log("===id===",body.user.is_admin);
-      if(body.user.is_admin === false){
-        bot.startPrivateConversation(message, notadmin);
-      }
-      if(body.user.is_admin === true){
-        bot.startPrivateConversation(message, setup);
-      }
-      
-    }
-  });
-});
-
-controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
-  console.log("====message====",message);
-  var user = message.user;
-  var token = bot.config.token;
-
-  HTTP({
-    url: 'https://slack.com/api/users.info',
-    qs: {token: token, user: user},
-    method: 'GET'
-  }, function(error, response, body) {
-    if (error) {
-      console.log('Error sending message: ', error);
-    } else if (response.body.error) {
-      console.log('Error: ', response);
-    } else {
-      body = JSON.parse(body);
-      console.log("===email===",body.user.profile.email);
-      console.log("===id===",body.user);
       STAMPLAYAPI.User.get({'email': body.user.profile.email}, function(err, res) {
         if(err) return console.log(err);
         var result = JSON.parse(res);
@@ -208,19 +179,25 @@ controller.hears(['story idea','edit story idea'],['ambient'], function(bot, mes
             console.log("=====user create====",userResult);
             var userResult = JSON.parse(userResult);
             console.log(message);
-            if(message.text === 'story idea'){
+            if(body.user.is_admin === false && text === 'setup'){
+              bot.startPrivateConversation(message, notadmin);
+            }
+            if(text === 'story idea'){
               bot.startPrivateConversation(message, askStory);
             }
-            if(message.text === 'edit story idea'){
-              bot.startPrivateConversation(message, askStoryForEdit);
+            if(body.user.is_admin === true && text === 'setup'){
+              bot.startPrivateConversation(message, setup);
             }
           })
         } else {
-          if(message.text === 'story idea'){
-              bot.startPrivateConversation(message, askStory);
+          if(body.user.is_admin === false && text === 'setup'){
+            bot.startPrivateConversation(message, notadmin);
           }
-          if(message.text === 'edit story idea'){
-            bot.startPrivateConversation(message, askStoryForEdit);
+          if(text === 'story idea'){
+            bot.startPrivateConversation(message, askStory);
+          }
+          if(body.user.is_admin === true && text === 'setup'){
+            bot.startPrivateConversation(message, setup);
           }
         }
       })
@@ -228,11 +205,69 @@ controller.hears(['story idea','edit story idea'],['ambient'], function(bot, mes
   });
 });
 
+// controller.hears(['story idea','edit story idea'],['ambient'], function(bot, message) {
+//   console.log("====message====",message);
+//   var user = message.user;
+//   var token = bot.config.token;
+
+//   HTTP({
+//     url: 'https://slack.com/api/users.info',
+//     qs: {token: token, user: user},
+//     method: 'GET'
+//   }, function(error, response, body) {
+//     if (error) {
+//       console.log('Error sending message: ', error);
+//     } else if (response.body.error) {
+//       console.log('Error: ', response);
+//     } else {
+//       body = JSON.parse(body);
+//       console.log("===email===",body.user.profile.email);
+//       console.log("===id===",body.user);
+//       STAMPLAYAPI.User.get({'email': body.user.profile.email}, function(err, res) {
+//         if(err) return console.log(err);
+//         var result = JSON.parse(res);
+//         if(result.data.length === 0) {
+//           console.log("===============",result);
+//           var signup_credentials = {
+//             email : body.user.profile.email,
+//             password: 'password',
+//             username: body.user.name,
+//             slackUserId: user
+//           };
+//           STAMPLAYAPI.User.save(signup_credentials, function(error, userResult) {
+//             if(error) {
+//               console.log("====user=error====",error);
+//             }
+//             console.log("=====user create====",userResult);
+//             var userResult = JSON.parse(userResult);
+//             console.log(message);
+//             if(message.text === 'story idea'){
+//               bot.startPrivateConversation(message, askStory);
+//             }
+//             if(message.text === 'edit story idea'){
+//               bot.startPrivateConversation(message, askStoryForEdit);
+//             }
+//           })
+//         } else {
+//           if(message.text === 'story idea'){
+//               bot.startPrivateConversation(message, askStory);
+//           }
+//           if(message.text === 'edit story idea'){
+//             bot.startPrivateConversation(message, askStoryForEdit);
+//           }
+//         }
+//       })
+//     }
+//   });
+// });
+
 function setup(response, convo){
-  convo.say("For Setup -> http://159.203.111.229/editorial_wiki/#/setup/");
+  convo.say("For Setup -> http://159.203.111.229/editorial_wiki/#/setup/"+convo.source_message.user);
 }
 function notadmin(response, convo){
-  convo.say("Sorry You are not an Admin");
+  console.log("+++++++",convo.source_message.user);
+   convo.say("For Setup -> http://159.203.111.229/editorial_wiki/#/setup/"+convo.source_message.user);
+  //convo.say("Sorry You are not an Admin");
 }
 function askStoryForEdit(response, convo) {
   console.log("==========askStory==============",response,"---conve-----",convo.source_message.user);
